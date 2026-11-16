@@ -32,7 +32,7 @@ export function defaultState() {
     textSize: '2',
     priority: 'money',
     items: makeBlankItems(),
-    topics: { money: true, medical: true },
+    topics: { money: true, medical: true, house: false, grave: false, family: false, pet: false },
     quizAnswers: {},
     quizDone: false,
     analysis: null,
@@ -87,6 +87,7 @@ export function sampleState() {
   s.items.house = { state: 'review', done: [true, false, false, false] }
   s.items.grave = { state: 'notyet', done: [false, false, false, false] }
   s.items.family = { state: 'unknown', done: [false, false, false] }
+  s.items.pet = { state: 'notyet', done: [false, false, false, false] }
   s.priority = 'money'
   s.quizAnswers = {
     q_money_1: 2,

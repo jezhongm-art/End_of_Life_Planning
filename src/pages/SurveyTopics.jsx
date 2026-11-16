@@ -9,7 +9,8 @@ const TOPIC_META = {
   medical: { icon: 'heart',  color: 't-rose',  shortDesc: '治療や介護の希望' },
   house:   { icon: 'home',   color: 't-blue',  shortDesc: '権利書・賃貸の管理' },
   grave:   { icon: 'book',   color: 't-slate', shortDesc: 'お墓や葬儀の相談' },
-  family:  { icon: 'people', color: 't-amber', shortDesc: '終活ノート・話し合い' }
+  family:  { icon: 'people', color: 't-amber', shortDesc: '終活ノート・話し合い' },
+  pet:     { icon: 'paw',    color: 't-plus',  shortDesc: '引き継ぎ先・お世話の希望' }
 }
 
 export default function SurveyTopics() {
@@ -21,7 +22,7 @@ export default function SurveyTopics() {
   }))
 
   const selectedCount = Object.values(selected).filter(Boolean).length
-  const isAllSelected = selectedCount === TOPICS.length
+  const isAllSelected = TOPICS.length > 0 && selectedCount === TOPICS.length
 
   const toggleTopic = (id) => {
     setSelected((prev) => ({
@@ -46,7 +47,7 @@ export default function SurveyTopics() {
 
   const handleStart = () => {
     const hasAny = Object.values(selected).some(Boolean)
-    const finalTopics = hasAny ? selected : { money: true, medical: true, house: true, grave: true, family: true }
+    const finalTopics = hasAny ? selected : { money: true, medical: true, house: true, grave: true, family: true, pet: true }
     updateTopics(finalTopics)
     navigate('/survey/q')
   }
@@ -71,7 +72,7 @@ export default function SurveyTopics() {
         </div>
       </div>
 
-      {/* ホーム画面と同様の2列タイルメニュー形式 */}
+      {/* 6分野のメニュータイル（2列×3行） */}
       <div className="tiles" style={{ marginTop: '.85rem' }}>
         {TOPICS.map((tp) => {
           const isChecked = !!selected[tp.id]
@@ -97,29 +98,48 @@ export default function SurveyTopics() {
             </button>
           )
         })}
+      </div>
 
-        {/* 6つ目のタイル：全体確認（迷ったらこれ） */}
+      {/* 全選択 / 全解除の横バー（質問に答えるボタンの上） */}
+      <div style={{ marginTop: '1rem' }}>
         <button
           type="button"
-          className={`tile ${isAllSelected ? 'on' : ''}`}
+          className={`btn btn-block ${isAllSelected ? 'btn-sub' : 'btn-ghost'}`}
+          style={{
+            minHeight: '2.85rem',
+            fontSize: '.92rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0 1rem'
+          }}
           onClick={toggleAll}
-          style={{ width: '100%' }}
         >
-          <span className="tile-check" aria-hidden="true">
-            {isAllSelected ? '✓' : ''}
+          <span style={{ display: 'flex', alignItems: 'center', gap: '.45rem' }}>
+            <span
+              className="mk"
+              style={{
+                width: '1.25rem',
+                height: '1.25rem',
+                fontSize: '.76rem',
+                background: isAllSelected ? 'var(--brand)' : '#fff',
+                color: isAllSelected ? '#fff' : 'inherit'
+              }}
+            >
+              {isAllSelected ? '✓' : ''}
+            </span>
+            <strong>
+              {isAllSelected ? 'すべての分野を選択中（全選択）' : 'すべての分野をまとめて選択する（全選択）'}
+            </strong>
           </span>
-
-          <div className="t-ic t-plus">
-            <Icon name="star" />
-          </div>
-
-          <span className="t-title">全分野（全体確認）</span>
-          <span className="t-desc">迷ったらすべて選択</span>
+          <span style={{ fontSize: '.8rem', color: 'var(--muted)' }}>
+            {isAllSelected ? 'タップで解除' : '迷ったら全体確認'}
+          </span>
         </button>
       </div>
 
-      {/* 次へ進むボタン */}
-      <div className="btn-row" style={{ marginTop: '1.1rem' }}>
+      {/* 質問に答えるボタン */}
+      <div className="btn-row" style={{ marginTop: '.65rem' }}>
         <button
           type="button"
           className="btn btn-primary btn-block"

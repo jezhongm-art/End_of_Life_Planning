@@ -3,7 +3,8 @@ export const QUIZ_ROOTS = {
   medical: "q_medical_1",
   house: "q_house_1",
   grave: "q_grave_1",
-  family: "q_family_1"
+  family: "q_family_1",
+  pet: "q_pet_1"
 }
 
 export const QUIZ_NODES = {
@@ -125,6 +126,28 @@ export const QUIZ_NODES = {
       { t: "よく話している", next: null, known: ["family"], reason: "ご家族との話し合いの機会がすでにあります。" },
       { t: "あまり話せていない・きっかけがない", next: null, suggest: "family", reason: "まだ話し合えていないため、無理のない範囲で家族と共有する手順をおすすめします。" },
       { t: "今はひとりで整理したい", next: null, known: ["family"], reason: "ご自身のペースで整理を進め、準備ができてから共有をご検討いただけます。" },
+      { t: "答えたくない", next: null, skip: true }
+    ]
+  },
+  q_pet_1: {
+    topic: "pet",
+    label: "ペットのこと",
+    text: "犬や猫など、ご自宅でお世話をしているペットはいますか?",
+    opts: [
+      { t: "ペットがおり、引き継ぎ先も決めている", next: null, known: ["pet"], reason: "ペットの引き継ぎ先がすでに決まっており安心です。" },
+      { t: "ペットがいるが、引き継ぎ先はまだ決めていない", next: "q_pet_2", suggest: "pet", reason: "万が一のときにペットが困らないよう、引き継ぎ先やお世話の相談をおすすめします。" },
+      { t: "以前飼っていたが、いまは飼っていない", next: null, skip: true },
+      { t: "ペットは飼っていない", next: null, naCandidate: "pet", reason: "ペットを飼われていないため、「対象外」に設定できます。" },
+      { t: "答えたくない", next: null, skip: true }
+    ]
+  },
+  q_pet_2: {
+    topic: "pet",
+    label: "ペットのこと（くわしく）",
+    text: "ペットの健康状態、持病、かかりつけ病院やお世話のメモを残していますか?",
+    opts: [
+      { t: "メモを残している", next: null, doing: "pet", suggest: "pet", reason: "お世話メモをお持ちなので、次は引き継いでくれる候補者との話し合いを進めましょう。" },
+      { t: "まだ残していない", next: null, suggest: "pet", reason: "ごはんの量やかかりつけ病院の情報をノートに書き出すところから始められます。" },
       { t: "答えたくない", next: null, skip: true }
     ]
   }
