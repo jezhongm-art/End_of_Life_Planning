@@ -329,6 +329,7 @@ body {
   margin-top: .8rem;
 }
 .tile {
+  position: relative;
   border: 2px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
@@ -343,7 +344,38 @@ body {
   gap: .45rem;
   box-shadow: var(--shadow);
   text-decoration: none;
-  transition: transform .15s ease;
+  transition: transform .15s ease, border-color .15s ease, background-color .15s ease;
+}
+.tile.on {
+  border-color: var(--brand);
+  background: var(--brand-tint);
+  box-shadow: 0 0 0 2px var(--brand);
+}
+.tile.on .t-title {
+  color: var(--brand-deep);
+}
+.tile-check {
+  position: absolute;
+  top: .5rem;
+  right: .5rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  border: 2px solid var(--line-strong);
+  background: #fff;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-head);
+  font-weight: 800;
+  font-size: .82rem;
+  color: #cfd8d4;
+  line-height: 1;
+  transition: all .15s ease;
+}
+.tile.on .tile-check {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
 }
 .tile .t-ic {
   width: 3.1rem;
