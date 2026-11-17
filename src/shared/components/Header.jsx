@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
 import { Icon } from './SvgIcons'
 
-export function Header({ title, showBack, onOpenSheet }) {
+export function Header({ title, showBack }) {
   const navigate = useNavigate()
   const location = useLocation()
   const { state, cycleTextSize } = useApp()
@@ -20,55 +20,44 @@ export function Header({ title, showBack, onOpenSheet }) {
   return (
     <header className="top">
       {shouldShowBack ? (
-        <button
-          type="button"
-          className="iconbtn"
-          aria-label="前の画面に戻る"
-          onClick={() => navigate(-1)}
-        >
-          <Icon name="back" stroke />
-        </button>
-      ) : (
-        <Link to="/settings" className="iconbtn" aria-label="設定画面を開く">
-          <Icon name="gear" />
-        </Link>
-      )}
-
-      {title ? (
-        <h1 className="vtitle">{title}</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flex: 1, minWidth: 0 }}>
+          <button
+            type="button"
+            className="iconbtn"
+            aria-label="前の画面に戻る"
+            onClick={() => navigate(-1)}
+          >
+            <Icon name="back" stroke />
+          </button>
+          <h1 className="vtitle">{title}</h1>
+        </div>
       ) : (
         <Link to="/" className="brandrow">
           <div className="brandmark">
             <Icon name="post" />
           </div>
-          <div>
+          <div style={{ minWidth: 0 }}>
             <div className="brandname">終活みちしるべ</div>
             <span className="brandtag">一歩ずつ進める準備ノート</span>
           </div>
         </Link>
       )}
 
-      <button
-        type="button"
-        className="iconbtn"
-        style={{ width: 'auto', padding: '0 .7rem', fontSize: '.84rem', fontWeight: 800 }}
-        onClick={cycleTextSize}
-        title="文字サイズを切り替える"
-      >
-        {textSizeLabel}
-      </button>
-
-      {onOpenSheet && (
+      <div className="top-actions">
         <button
           type="button"
-          className="iconbtn"
-          onClick={onOpenSheet}
-          title="画面一覧・開発メニュー"
-          aria-label="画面一覧を開く"
+          className="textsize-btn"
+          onClick={cycleTextSize}
+          title="文字サイズを切り替える"
+          aria-label="文字サイズを切り替える"
         >
-          <Icon name="clip" />
+          {textSizeLabel}
         </button>
-      )}
+
+        <Link to="/settings" className="iconbtn" aria-label="設定画面を開く">
+          <Icon name="gear" />
+        </Link>
+      </div>
     </header>
   )
 }
