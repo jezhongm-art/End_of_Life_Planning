@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
-import { useApp } from '../context/AppContext'
-import { WISH_PRESETS } from '../data/wishes'
-import { Icon } from '../components/SvgIcons'
+import { useApp } from '../shared/context/AppContext'
+import { WISH_PRESETS } from '../shared/wishes'
+import { Icon } from '../shared/components/SvgIcons'
 
 export default function WishList() {
   const { state, addWish, toggleWish, setRewardWish } = useApp()

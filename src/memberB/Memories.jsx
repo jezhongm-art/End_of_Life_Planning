@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
-import { useApp } from '../context/AppContext'
-import { MEMO_QUESTIONS } from '../data/wishes'
-import { Icon } from '../components/SvgIcons'
+import { useApp } from '../shared/context/AppContext'
+import { MEMO_QUESTIONS } from '../shared/wishes'
+import { Icon } from '../shared/components/SvgIcons'
 
 export default function Memories() {
   const { state, addMemo, deleteMemo } = useApp()

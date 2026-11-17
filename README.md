@@ -17,31 +17,40 @@ npm run dev   # 開発サーバー起動（http://localhost:5173/）
 
 ---
 
-## 2. 担当分けと作業ファイル（計43h ＋ 予備2h）
+## 2. 担当別 作業フォルダとファイル（計43h ＋ 予備2h）
 
-各自、以下の**担当ファイル**を開いて作業を進めてください。
+作業範囲が迷子にならないよう、**担当者ごとに作業フォルダを完全に分離**しています。  
+各自、**自分の名前のフォルダの中だけを開いて作業**を進めてください。
 
-### ■ A担当（計17h）：画面・フロー統合
-| 機能・作業 | 時間 | 作業ファイル |
+```
+src/
+├── memberA/       # ★ A担当はここだけ作業！
+├── memberB/       # ★ B担当はここだけ作業！
+├── memberC/       # ★ C担当はここだけ作業！
+└── shared/        # 共通部品・デザイン（通常は編集不要）
+```
+
+### ■ A担当（計17h）：`src/memberA/` フォルダで作業
+| 機能・作業 | 時間 | 担当ファイル（すべて `src/memberA/` 内） |
 |---|:---:|---|
-| ① ホーム / ② 初回案内 | 3h | `src/pages/Home.jsx`<br>`src/pages/Guide.jsx` |
-| ⑤ 生活状況アンケート画面（分岐） | 5h | `src/pages/SurveyTopics.jsx`<br>`src/pages/SurveyQuestions.jsx` |
-| ⑥ 回答分析連携 / ⑦ 質問結果・提案表示 | 7h | `src/pages/SurveyResult.jsx`<br>`src/context/AppContext.jsx` |
-| ⑨ やってみたいことリスト | 2h | `src/pages/WishList.jsx` |
+| ① ホーム / ② 初回案内 | 3h | `Home.jsx`<br>`Guide.jsx` |
+| ⑤ 生活状況アンケート画面（分岐） | 5h | `SurveyTopics.jsx`<br>`SurveyQuestions.jsx` |
+| ⑥ 回答分析連携 / ⑦ 質問結果・提案表示 | 7h | `SurveyResult.jsx` |
+| ⑨ やってみたいことリスト | 2h | `WishList.jsx` |
 
-### ■ B担当（計11h）：準備項目系
-| 機能・作業 | 時間 | 作業ファイル |
+### ■ B担当（計11h）：`src/memberB/` フォルダで作業
+| 機能・作業 | 時間 | 担当ファイル（すべて `src/memberB/` 内） |
 |---|:---:|---|
-| ③ 準備項目一覧（7項目） | 4h | `src/pages/ItemList.jsx` |
-| ④ 準備状況・優先順位の管理 | 5h | `src/pages/ItemDetail.jsx`<br>`src/components/StatusBadge.jsx` |
-| ⑧ 相談先・手続きガイド | 2h | `src/pages/ItemDetail.jsx`<br>`src/data/items.js` |
+| ③ 準備項目一覧（7項目＋ペット） | 4h | `ItemList.jsx` |
+| ④ 準備状況・優先順位の管理 | 5h | `ItemDetail.jsx`<br>`StatusBadge.jsx` |
+| ⑧ 相談先・手続きガイド | 2h | `ItemDetail.jsx`<br>`items.js`（やること・相談先リンクデータ） |
 
-### ■ C担当（計9h）：データ設計・基本設定
-| 機能・作業 | 時間 | 作業ファイル |
+### ■ C担当（計9h）：`src/memberC/` フォルダで作業
+| 機能・作業 | 時間 | 担当ファイル（すべて `src/memberC/` 内） |
 |---|:---:|---|
-| ⑤ 質問データ作成 | 4h | `src/data/questions.js` |
-| ⑥ 回答・提案の対応表作成 | 3h | `src/data/rules.js` |
-| ⑩ 基本設定（名前・文字サイズ変更） | 2h | `src/pages/Settings.jsx` |
+| ⑤ 質問データ作成 | 4h | `questions.js`（質問文・選択肢・分岐先定義） |
+| ⑥ 回答・提案の対応表作成 | 3h | `rules.js`（どの回答でどの項目を提案するかのルール） |
+| ⑩ 基本設定（名前・文字サイズ変更） | 2h | `Settings.jsx` |
 
 ### ■ 全員（各2h / 計6h）
 - **機能の統合・動作確認**: `src/App.jsx` および全画面の結合テスト
@@ -50,41 +59,39 @@ npm run dev   # 開発サーバー起動（http://localhost:5173/）
 
 ## 3. 質問・項目・画面を増やすときの連携手順（導線）
 
-「新しい質問を増やし、それに連動する準備項目や画面を追加したい」ときは、**【C担当 → B担当 → A担当】** のリレー形式でファイルを編集します。
+「新しい質問を増やし、それに連動する準備項目や画面を追加したい」ときは、**【C担当 → B担当 → A担当】** のリレー形式でそれぞれのフォルダのファイルを編集します。
 
 ```mermaid
 flowchart LR
-    C["【1】C担当<br>質問・対応表作成<br>questions.js / rules.js"] --> B["【2】B担当<br>準備項目・詳細定義<br>items.js / ItemDetail.jsx"]
-    B --> A["【3】A担当<br>画面メニュー・結果表示<br>SurveyTopics / SurveyResult"]
+    C["【1】C担当<br>src/memberC/<br>questions.js / rules.js"] --> B["【2】B担当<br>src/memberB/<br>items.js / ItemDetail.jsx"]
+    B --> A["【3】A担当<br>src/memberA/<br>SurveyTopics / SurveyResult"]
     A --> ALL["【4】全員<br>アンケート〜詳細への<br>一連の流れを確認"]
 ```
 
-### 【手順1】C担当：質問データと提案ルールの作成
+### 【手順1】C担当：質問データと提案ルールの作成（`src/memberC/`）
 1. **質問を新しく作る**:
-   - `src/data/questions.js` を開く。
+   - `src/memberC/questions.js` を開く。
    - `QUIZ_NODES` に新しい質問ID（例: `q_digital_1`）、質問文、選択肢、分岐先（`next`）を追加する。
 2. **提案ルール（対応表）を紐付ける**:
-   - `src/data/rules.js` を開く。
+   - `src/memberC/rules.js` を開く。
    - その選択肢を選んだときに、どの準備項目をおすすめするか（`suggest: "項目ID"`）を対応付ける。
-3. （分野自体を新しく増やす場合のみ）:
-   - `src/data/items.js` の `TOPICS` 配列に新分野（例: `{ id: "digital", t: "デジタル遺産" }`）を追加。
 
-### 【手順2】B担当：準備項目（やること）と詳細画面の作成
+### 【手順2】B担当：準備項目と詳細画面の作成（`src/memberB/`）
 1. **準備項目を新しく定義する**:
-   - `src/data/items.js` を開く。
+   - `src/memberB/items.js` を開く。
    - `ITEMS` 配列に、新しい準備項目（項目ID、タイトル、説明、準備手順 `steps`、公的相談先 `links`）を追加する。
-   - ※ ここに追加するだけで、`src/pages/ItemList.jsx`（準備一覧）および `src/pages/ItemDetail.jsx`（詳細画面）に**自動的に新しい項目が表示**されます。
+   - ※ ここに追加するだけで、`ItemList.jsx`（準備一覧）および `ItemDetail.jsx`（詳細画面）に**自動的に新しい項目が表示**されます。
 2. **詳細画面の表示を確認・調整する**:
-   - `src/pages/ItemDetail.jsx` を開き、追加した項目の手順チェックボックスや相談先リンクが正常に動くか確認する。
+   - `src/memberB/ItemDetail.jsx` を開き、追加した項目の手順チェックボックスや相談先リンクが正常に動くか確認する。
 
-### 【手順3】A担当：アンケート画面と結果画面の連携
+### 【手順3】A担当：アンケート画面と結果画面の連携（`src/memberA/`）
 1. **分野選択画面にメニュータイルを追加する**:
-   - `src/pages/SurveyTopics.jsx` を開く。
-   - `TOPIC_META` に新分野のアイコン（`icon`）と色（`color`）を指定する（ホーム風のメニュータイルに自動追加されます）。
+   - `src/memberA/SurveyTopics.jsx` を開く。
+   - `TOPIC_META` に新分野のアイコン（`icon`）と色（`color`）を指定する（メニュータイルに自動追加されます）。
 2. **質問画面の動作を確認する**:
-   - `src/pages/SurveyQuestions.jsx` で、C担当が作った新しい質問が表示され、選択肢によって次の質問へ分岐することを確認する。
+   - `src/memberA/SurveyQuestions.jsx` で、C担当が作った新しい質問が表示され、選択肢によって次の質問へ分岐することを確認する。
 3. **結果画面でのおすすめ表示を確認する**:
-   - `src/pages/SurveyResult.jsx` で、アンケート回答後にB担当が作った準備項目が「新しく見つかった準備」として提案カードに正しく表示されるか確認する。
+   - `src/memberA/SurveyResult.jsx` で、アンケート回答後にB担当が作った準備項目が「新しく見つかった準備」として提案カードに正しく表示されるか確認する。
 
 ### 【手順4】全員：結合テスト（一連の導線チェック）
 1. ブラウザで `/survey`（分野選択）を開く。
@@ -94,6 +101,6 @@ flowchart LR
 
 ## 4. 開発ルール（Git）
 
-- 作業開始時は各自のブランチを作成してください（例: `git checkout -b feature/survey`）
-- 自分の担当ファイル（`src/pages/` や `src/data/`）を中心に編集することで、競合（コンフリクト）を防げます
+- 作業開始時は各自のブランチを作成してください（例: `git checkout -b feature/member-b`）
+- **自分の担当フォルダ（`src/memberA/`, `src/memberB/`, `src/memberC/`）の中だけを編集**することで、コードの衝突（コンフリクト）を完全に防げます
 - 変更を保存すると、Viteが自動で検知してブラウザ画面が更新されます

@@ -1,10 +1,10 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { useApp } from '../context/AppContext'
-import { ProgressBar } from '../components/ProgressBar'
-import { StatusBadge } from '../components/StatusBadge'
-import { Icon } from '../components/SvgIcons'
-import { STATE } from '../data/items'
+import { useApp } from '../shared/context/AppContext'
+import { ProgressBar } from '../shared/components/ProgressBar'
+import { StatusBadge } from '../memberB/StatusBadge'
+import { Icon } from '../shared/components/SvgIcons'
+import { STATE } from '../memberB/items'
 
 export default function Home() {
   const { state, calcProgress } = useApp()

@@ -1,10 +1,10 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useApp } from '../context/AppContext'
-import { ITEMS, TOPICS } from '../data/items'
-import { StatusBadge } from '../components/StatusBadge'
-import { ProgressBar } from '../components/ProgressBar'
-import { Icon } from '../components/SvgIcons'
+import { useApp } from '../shared/context/AppContext'
+import { ITEMS, TOPICS } from './items'
+import { StatusBadge } from './StatusBadge'
+import { ProgressBar } from '../shared/components/ProgressBar'
+import { Icon } from '../shared/components/SvgIcons'
 
 export default function ItemList() {
   const { state, calcProgress } = useApp()

@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useApp } from '../context/AppContext'
-import { TOPICS } from '../data/items'
-import { Icon } from '../components/SvgIcons'
+import { useApp } from '../shared/context/AppContext'
+import { TOPICS } from '../memberB/items'
+import { Icon } from '../shared/components/SvgIcons'
 
 const TOPIC_META = {
   money:   { icon: 'clip',   color: 't-teal',  shortDesc: '通帳・書類・保険' },

@@ -1,4 +1,4 @@
-import { ITEMS, TOPICS } from './items'
+import { ITEMS, TOPICS } from '../memberB/items'
 import { QUIZ_ROOTS, QUIZ_NODES } from './questions'
 
 /* ---------- 動的アンケートフロー構築 ---------- */

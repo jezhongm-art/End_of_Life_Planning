@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useApp } from '../context/AppContext'
-import { QUIZ_NODES } from '../data/questions'
-import { computeQuizFlow } from '../data/rules'
-import { QuizProgressBar } from '../components/ProgressBar'
-import { Icon } from '../components/SvgIcons'
+import { useApp } from '../shared/context/AppContext'
+import { QUIZ_NODES } from '../memberC/questions'
+import { computeQuizFlow } from '../memberC/rules'
+import { QuizProgressBar } from '../shared/components/ProgressBar'
+import { Icon } from '../shared/components/SvgIcons'
 
 export default function SurveyQuestions() {
   const navigate = useNavigate()

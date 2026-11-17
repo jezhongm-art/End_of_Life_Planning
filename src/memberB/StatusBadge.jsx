@@ -1,5 +1,5 @@
 import React from 'react'
-import { STATE, STATE_ORDER } from '../data/items'
+import { STATE, STATE_ORDER } from './items'
 
 export function StatusBadge({ state }) {
   const m = STATE[state] || STATE.unknown

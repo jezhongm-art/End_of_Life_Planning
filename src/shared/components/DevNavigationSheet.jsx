@@ -1,6 +1,6 @@
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { SCREENS_INFO } from '../data/wishes'
+import { SCREENS_INFO } from '../wishes'
 import { useApp } from '../context/AppContext'
 import { Icon } from './SvgIcons'
 

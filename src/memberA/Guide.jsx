@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useApp } from '../context/AppContext'
-import { Icon } from '../components/SvgIcons'
+import { useApp } from '../shared/context/AppContext'
+import { Icon } from '../shared/components/SvgIcons'
 
 export default function Guide() {
   const navigate = useNavigate()

@@ -1,9 +1,9 @@
 import React from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
-import { useApp } from '../context/AppContext'
-import { ITEMS, TOPICS } from '../data/items'
-import { StatusBadge, StatusPicker } from '../components/StatusBadge'
-import { Icon } from '../components/SvgIcons'
+import { useApp } from '../shared/context/AppContext'
+import { ITEMS, TOPICS } from './items'
+import { StatusBadge, StatusPicker } from './StatusBadge'
+import { Icon } from '../shared/components/SvgIcons'
 
 export default function ItemDetail() {
   const [searchParams] = useSearchParams()

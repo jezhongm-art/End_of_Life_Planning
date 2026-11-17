@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
-import { useApp } from '../context/AppContext'
-import { TALK_TOPICS } from '../data/wishes'
-import { Icon } from '../components/SvgIcons'
+import { useApp } from '../shared/context/AppContext'
+import { TALK_TOPICS } from '../shared/wishes'
+import { Icon } from '../shared/components/SvgIcons'
 
 export default function FamilyTalk() {
   const { state, addTalkLog, updateRewardConsult } = useApp()

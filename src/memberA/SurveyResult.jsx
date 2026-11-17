@@ -1,9 +1,9 @@
 import React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useApp } from '../context/AppContext'
-import { ITEMS } from '../data/items'
-import { StatusBadge } from '../components/StatusBadge'
-import { Icon } from '../components/SvgIcons'
+import { useApp } from '../shared/context/AppContext'
+import { ITEMS } from '../memberB/items'
+import { StatusBadge } from '../memberB/StatusBadge'
+import { Icon } from '../shared/components/SvgIcons'
 
 export default function SurveyResult() {
   const navigate = useNavigate()

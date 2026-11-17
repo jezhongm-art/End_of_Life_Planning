@@ -1,21 +1,26 @@
 import React, { useState } from 'react'
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom'
-import { SvgSprite } from './components/SvgIcons'
-import { Header } from './components/Header'
-import { BottomNav } from './components/BottomNav'
-import { DevNavigationSheet } from './components/DevNavigationSheet'
+import { SvgSprite } from './shared/components/SvgIcons'
+import { Header } from './shared/components/Header'
+import { BottomNav } from './shared/components/BottomNav'
+import { DevNavigationSheet } from './shared/components/DevNavigationSheet'
 
-import Home from './pages/Home'
-import Guide from './pages/Guide'
-import SurveyTopics from './pages/SurveyTopics'
-import SurveyQuestions from './pages/SurveyQuestions'
-import SurveyResult from './pages/SurveyResult'
-import ItemList from './pages/ItemList'
-import ItemDetail from './pages/ItemDetail'
-import WishList from './pages/WishList'
-import Settings from './pages/Settings'
-import Memories from './pages/Memories'
-import FamilyTalk from './pages/FamilyTalk'
+// ■ A担当の画面
+import Home from './memberA/Home'
+import Guide from './memberA/Guide'
+import SurveyTopics from './memberA/SurveyTopics'
+import SurveyQuestions from './memberA/SurveyQuestions'
+import SurveyResult from './memberA/SurveyResult'
+import WishList from './memberA/WishList'
+
+// ■ B担当の画面
+import ItemList from './memberB/ItemList'
+import ItemDetail from './memberB/ItemDetail'
+import Memories from './memberB/Memories'
+import FamilyTalk from './memberB/FamilyTalk'
+
+// ■ C担当の画面
+import Settings from './memberC/Settings'
 
 export default function App() {
   const [isSheetOpen, setIsSheetOpen] = useState(false)
@@ -80,17 +85,23 @@ export default function App() {
 
         <main id="screen">
           <Routes>
+            {/* ■ A担当の画面 */}
             <Route path="/" element={<Home />} />
             <Route path="/guide" element={<Guide />} />
             <Route path="/survey" element={<SurveyTopics />} />
             <Route path="/survey/q" element={<SurveyQuestions />} />
             <Route path="/survey/result" element={<SurveyResult />} />
+            <Route path="/wishes" element={<WishList />} />
+
+            {/* ■ B担当の画面 */}
             <Route path="/items" element={<ItemList />} />
             <Route path="/items/detail" element={<ItemDetail />} />
-            <Route path="/wishes" element={<WishList />} />
-            <Route path="/settings" element={<Settings />} />
             <Route path="/memories" element={<Memories />} />
             <Route path="/family" element={<FamilyTalk />} />
+
+            {/* ■ C担当の画面 */}
+            <Route path="/settings" element={<Settings />} />
+
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

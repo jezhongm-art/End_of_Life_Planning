@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
-import { ITEMS } from '../data/items'
-import { computeAnalysisFromAnswers } from '../data/rules'
+import { ITEMS } from '../../memberB/items'
+import { computeAnalysisFromAnswers } from '../../memberC/rules'
 
 const STORAGE_KEY = 'shukatsu_michishirube_react_v1'
 
