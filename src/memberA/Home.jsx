@@ -10,7 +10,7 @@ export default function Home() {
   const { state, calcProgress } = useApp()
   const progress = calcProgress()
   const nextItem = progress.nextItem
-  const nextItemState = (state.items[nextItem.id] && state.items[nextItem.id].state) || 'unknown'
+  const nextItemState =(state.items[nextItem.id] && state.items[nextItem.id].state) || 'notyet'
 
   return (
     <div className="screen-anim">
@@ -133,7 +133,7 @@ export default function Home() {
         </Link>
       </div>
 
-      {/* 状態の内訳 */}
+      -      {/* 状態の内訳 */}
       <details className="acc">
         <summary>準備状況の内訳を見る</summary>
         <div className="acc-body">
@@ -146,21 +146,9 @@ export default function Home() {
               <span className="s-lb">{STATE.doing.t}</span>
               <span className="s-num">{progress.countByState.doing}</span>
             </div>
-            <div className="stat s-review">
-              <span className="s-lb">{STATE.review.t}</span>
-              <span className="s-num">{progress.countByState.review}</span>
-            </div>
             <div className="stat s-notyet">
               <span className="s-lb">{STATE.notyet.t}</span>
               <span className="s-num">{progress.countByState.notyet}</span>
-            </div>
-            <div className="stat s-unknown">
-              <span className="s-lb">{STATE.unknown.t}</span>
-              <span className="s-num">{progress.countByState.unknown}</span>
-            </div>
-            <div className="stat s-na">
-              <span className="s-lb">{STATE.na.t}</span>
-              <span className="s-num">{progress.countByState.na}</span>
             </div>
           </div>
         </div>

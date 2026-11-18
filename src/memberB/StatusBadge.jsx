@@ -2,7 +2,7 @@ import React from 'react'
 import { STATE, STATE_ORDER } from './items'
 
 export function StatusBadge({ state }) {
-  const m = STATE[state] || STATE.unknown
+  const m = STATE[state] || STATE.notyet
   return (
     <span className={`st ${m.cls}`}>
       <span className="mk" aria-hidden="true">{m.mk}</span>

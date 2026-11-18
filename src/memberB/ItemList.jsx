@@ -64,7 +64,7 @@ export default function ItemList() {
       {/* 項目リスト */}
       <div>
         {filteredItems.map((item) => {
-          const itemState = state.items[item.id]?.state || 'unknown'
+          const itemState = state.items[item.id]?.state || 'notyet'
           const itemDone = state.items[item.id]?.done || []
           const stepsCount = item.steps.length
           const doneStepsCount = itemDone.filter(Boolean).length
