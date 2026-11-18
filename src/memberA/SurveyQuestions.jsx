@@ -22,7 +22,7 @@ export default function SurveyQuestions() {
 
   // 質問フロー初期化
   useEffect(() => {
-    const queue = computeQuizFlow(state.topics)
+    const queue = computeQuizFlow()
     setFlow(queue)
     // 既に回答があれば未回答の最初のインデックスを探す
     const firstUnanswered = queue.findIndex((qId) => answers[qId] === undefined)
@@ -31,7 +31,7 @@ export default function SurveyQuestions() {
     } else {
       setCurIdx(0)
     }
-  }, [state.topics])
+  }, [])
 
   const curQId = flow[curIdx]
   const node = curQId ? QUIZ_NODES[curQId] : null
@@ -95,13 +95,20 @@ export default function SurveyQuestions() {
 
     const opt = node.opts[optIdx]
 
-    // 分岐があればフローに挿入
-    let nextFlow = [...flow]
+    // 現在のトピックの他の派生質問（以前の選択で挿入されたもの）を整理
+    const currentTopic = node.topic
+    let nextFlow = flow.filter((qId, idx) => {
+      if (idx <= curIdx) return true
+      const n = QUIZ_NODES[qId]
+      // 同じトピックで新分岐以外の派生質問は除外
+      return !(n && n.topic === currentTopic && qId !== opt.next)
+    })
+
     if (opt.next && !nextFlow.includes(opt.next)) {
       // 現在の次の位置に挿入
       nextFlow.splice(curIdx + 1, 0, opt.next)
-      setFlow(nextFlow)
     }
+    setFlow(nextFlow)
 
     // 次の質問へ、または終了
     if (curIdx + 1 < nextFlow.length) {
@@ -135,8 +142,22 @@ export default function SurveyQuestions() {
       {/* 質問カード */}
       <section className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span className="smallcap" style={{ color: 'var(--blue)' }}>
-            {node.label}
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '.35rem',
+              padding: '.25rem .75rem',
+              borderRadius: '999px',
+              background: 'var(--brand-tint)',
+              border: '1px solid var(--brand-tint-2)',
+              fontSize: '.88rem',
+              fontWeight: 800,
+              color: 'var(--brand-deep)'
+            }}
+          >
+            <span>分野：</span>
+            <span>{node.label}</span>
           </span>
           <button
             type="button"

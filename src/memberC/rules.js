@@ -1,23 +1,13 @@
 import { ITEMS, TOPICS } from '../memberB/items'
 import { QUIZ_ROOTS, QUIZ_NODES } from './questions'
 
-/* ---------- 動的アンケートフロー構築 ---------- */
-export function computeQuizFlow(selectedTopics = {}) {
+/* ---------- 動的アンケートフロー構築（全分野を順番に開始） ---------- */
+export function computeQuizFlow() {
   const queue = []
   TOPICS.forEach((tp) => {
-    if (selectedTopics[tp.id]) {
-      const rootId = QUIZ_ROOTS[tp.id]
-      if (rootId) {
-        queue.push(rootId)
-      }
-    }
+    const rootId = QUIZ_ROOTS[tp.id]
+    if (rootId) queue.push(rootId)
   })
-  if (!queue.length) {
-    TOPICS.forEach((tp) => {
-      const rootId = QUIZ_ROOTS[tp.id]
-      if (rootId) queue.push(rootId)
-    })
-  }
   return queue
 }
 

@@ -40,7 +40,7 @@ export const TALK_TOPICS = [
 export const SCREENS_INFO = [
   { path: "/guide",    no: "01", name: "初回案内・使い方サポート", kind: "core", note: "できること・3ステップ図解・スキップ・見直し" },
   { path: "/",         no: "02", name: "ホーム・進捗確認",         kind: "core", note: "完了率・次の一歩・途中再開・楽しみプレビュー" },
-  { path: "/survey",   no: "03", name: "アンケート：分野を選ぶ",   kind: "core", note: "複数選択・全体確認（分からない入口）" },
+  { path: "/survey",   no: "03", name: "生活状況アンケート（開始案内）", kind: "core", note: "シニア向け安心設計・全問順次回答・途中終了対応" },
   { path: "/survey/q", no: "04", name: "アンケート：質問（分岐）", kind: "core", note: "回答に応じて分岐・途中保存と再開" },
   { path: "/survey/result", no: "05", name: "質問結果・準備の提案", kind: "core", note: "対応表照合・次の一歩1件・全体像・家族まとめ" },
   { path: "/items",    no: "06", name: "準備項目一覧（7項目）",    kind: "core", note: "アンケート前も利用可・6つの状態・優先選択" },

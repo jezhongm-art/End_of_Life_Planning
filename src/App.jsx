@@ -34,7 +34,7 @@ export default function App() {
       case '/guide':
         return '初回案内'
       case '/survey':
-        return 'アンケート：分野選択'
+        return '生活状況アンケート'
       case '/survey/q':
         return 'アンケート：質問'
       case '/survey/result':
