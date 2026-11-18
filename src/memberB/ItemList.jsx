@@ -29,7 +29,7 @@ export default function ItemList() {
       <section className="card">
         <h2 className="card-title">準備項目一覧（全7項目）</h2>
         <p className="card-sub">
-          終活に必要な基本的な7つの準備です。気になる項目をタップして手順を確認できます。
+          終活に必要な基本的な7つの準備です。気になる項目を選んで手順を確認できます。
         </p>
         <div style={{ marginTop: '.6rem' }}>
           <ProgressBar pct={progress.pct} label={`完了: ${progress.doneCount} / ${progress.applicableCount} 項目`} />
