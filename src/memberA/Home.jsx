@@ -17,10 +17,10 @@ export default function Home() {
       {/* 挨拶 & サブタイトル */}
       <div style={{ marginBottom: '.9rem' }}>
         <h2 className="card-title" style={{ fontSize: '1.25rem' }}>
-          {state.name || '利用者'} さん、こんにちは
+          {state.name || 'ご利用者'} 様
         </h2>
         <p className="card-sub">
-          焦らず、気になる項目から少しずつ準備を進めていきましょう。
+          準備の進み具合を確認し、必要な項目から進めましょう。
         </p>
       </div>
 
@@ -28,16 +28,16 @@ export default function Home() {
       {!state.quizDone && (
         <div className="notice notice-teal">
           <div className="n-ic">
-            <Icon name="bulb" />
+            <Icon name="post" />
           </div>
           <div className="n-body">
-            <p className="n-title">何から始めるか迷ったら</p>
+            <p className="n-title">生活状況アンケート</p>
             <p className="n-sub">
-              簡単な質問に答えると、あなたに今必要な準備を自動で見つけます。
+              簡単な質問（所要約3分）で、今必要な準備項目を確認できます。
             </p>
             <div style={{ marginTop: '.65rem' }}>
               <Link to="/survey" className="btn btn-primary btn-small">
-                質問に答えてみる（約3分）
+                アンケートを開始する（約3分）
               </Link>
             </div>
           </div>
@@ -50,7 +50,7 @@ export default function Home() {
           <div>
             <h3 className="card-title">準備の進み具合</h3>
             <p className="card-sub">
-              有効 {progress.applicableCount} 項目中 {progress.doneCount} 項目が完了
+              対象 {progress.applicableCount} 項目中 {progress.doneCount} 項目完了
             </p>
           </div>
           <span className="big-num">{progress.pct}%</span>
@@ -60,8 +60,11 @@ export default function Home() {
 
         {progress.pct === 100 && (
           <div className="celebrate" style={{ marginTop: '.8rem' }}>
-            <p style={{ fontWeight: 800, color: 'var(--amber)' }}>
-              🎉 すべての準備が完了しました！ご家族との対話や楽しみを大切に過ごしましょう。
+            <p style={{ fontWeight: 800, color: 'var(--brand-deep)' }}>
+              すべての準備項目が完了しました。
+            </p>
+            <p className="note" style={{ color: 'var(--muted)', marginTop: '.15rem' }}>
+              ご家族との対話や日々の暮らしを大切にお過ごしください。
             </p>
           </div>
         )}
@@ -71,7 +74,7 @@ export default function Home() {
       {nextItem && (
         <section className="hero" style={{ marginTop: '1rem' }}>
           <div className="h-eyebrow">
-            <Icon name="star" style={{ width: '1rem', height: '1rem' }} /> 次に取り組む一歩
+            <Icon name="star" style={{ width: '1rem', height: '1rem' }} /> 次の取り組み
           </div>
           <h3 className="h-title">{nextItem.title}</h3>
           <p className="card-sub">{nextItem.desc}</p>
@@ -86,7 +89,7 @@ export default function Home() {
               to={`/items/detail?id=${nextItem.id}`}
               className="btn btn-primary btn-block"
             >
-              この項目の手順を見る
+              手順を確認する
             </Link>
           </div>
         </section>
@@ -97,11 +100,11 @@ export default function Home() {
       <div className="tiles">
         <Link to="/survey" className="tile">
           <div className="t-ic t-teal">
-            <Icon name="bulb" />
+            <Icon name="post" />
           </div>
           <span className="t-title">生活状況アンケート</span>
           <span className="t-desc">
-            {state.quizDone ? '回答を見直す・再診断' : '必要な準備を見つける'}
+            {state.quizDone ? '回答の確認・再診断' : '必要な準備の確認'}
           </span>
         </Link>
 
@@ -110,7 +113,7 @@ export default function Home() {
             <Icon name="clip" />
           </div>
           <span className="t-title">準備項目リスト</span>
-          <span className="t-desc">7つの項目を一覧・進捗管理</span>
+          <span className="t-desc">全項目の一覧と進捗管理</span>
         </Link>
 
         <Link to="/wishes" className="tile">
@@ -118,7 +121,7 @@ export default function Home() {
             <Icon name="star" />
           </div>
           <span className="t-title">やってみたいこと</span>
-          <span className="t-desc">楽しみや挑戦の目標管理</span>
+          <span className="t-desc">楽しみや希望の記録</span>
         </Link>
 
         <Link to="/memories" className="tile">
@@ -126,7 +129,7 @@ export default function Home() {
             <Icon name="heart" />
           </div>
           <span className="t-title">思い出・メッセージ</span>
-          <span className="t-desc">家族に伝えたい気持ちを記録</span>
+          <span className="t-desc">家族へ伝えたい言葉の記録</span>
         </Link>
       </div>
 

@@ -37,9 +37,9 @@ export default function SurveyResult() {
           <Icon name="check" stroke />
         </div>
         <div className="n-body">
-          <h2 className="n-title">アンケートの分析が完了しました</h2>
+          <h2 className="n-title">アンケート集計結果</h2>
           <p className="n-sub">
-            ご回答いただきありがとうございました。現在の状況に合わせて、おすすめの進め方をまとめました。
+            ご回答内容にもとづき、優先して確認が必要な項目をまとめました。
           </p>
         </div>
       </div>
@@ -48,12 +48,12 @@ export default function SurveyResult() {
       {topPick && topPick.item && (
         <section className="hero" style={{ marginTop: '1rem' }}>
           <div className="h-eyebrow">
-            <Icon name="bulb" style={{ width: '1rem', height: '1rem' }} /> 最初におすすめする一歩
+            <Icon name="star" style={{ width: '1rem', height: '1rem' }} /> 優先する取り組み
           </div>
           <h3 className="h-title">{topPick.item.title}</h3>
           <p className="card-sub">{topPick.item.desc}</p>
           <div className="h-reason">
-            <strong>提案の理由：</strong> {topPick.reason}
+            <strong>理由：</strong> {topPick.reason}
           </div>
 
           <div className="btn-row" style={{ marginTop: '1rem' }}>
@@ -62,24 +62,24 @@ export default function SurveyResult() {
               className="btn btn-primary"
               style={{ flex: 1 }}
             >
-              手順を見る
+              手順を確認する
             </Link>
             <button
               type="button"
               className="btn btn-ghost"
               onClick={() => handleSetPriority(topPick.item.id)}
             >
-              次の一歩に選ぶ
+              次の取り組みに設定
             </button>
           </div>
         </section>
       )}
 
       {/* 新しく見つかった準備 */}
-      <h3 className="sec-title">新しく見つかった準備（{newlyItems.length}件）</h3>
+      <h3 className="sec-title">確認をおすすめする項目（{newlyItems.length}件）</h3>
       {newlyItems.length === 0 ? (
         <div className="empty">
-          回答された範囲では、新しく優先すべき準備は見つかりませんでした。
+          回答された範囲では、新しく優先すべき項目はありません。
         </div>
       ) : (
         newlyItems.map(({ item, reason }) => {
@@ -107,7 +107,7 @@ export default function SurveyResult() {
       {knownItems.length > 0 && (
         <>
           <h3 className="sec-title" style={{ marginTop: '1.4rem' }}>
-            すでに把握・対応できている項目（{knownItems.length}件）
+            把握済みの項目（{knownItems.length}件）
           </h3>
           {knownItems.map(({ item, reason }) => {
             const itemState = state.items[item.id]?.state || 'unknown'
@@ -126,15 +126,15 @@ export default function SurveyResult() {
 
       {/* 家族に伝えるまとめカード */}
       <section className="card" style={{ marginTop: '1.4rem' }}>
-        <h3 className="card-title">家族に伝えるまとめ（メモ）</h3>
+        <h3 className="card-title">家族への相談用メモ</h3>
         <p className="card-sub">
-          家族に相談するとき、以下の内容をそのまま話したり見せたりできます。
+          家族に相談するとき、そのまま伝えられる文面の例です。
         </p>
 
         <div className="qbubble" style={{ marginTop: '.7rem' }}>
           「終活みちしるべで確認したところ、まずは『
           {topPick?.item?.title || '準備項目'}』から整理を始めようと思っています。
-          {newlyItems.length > 0 && `あわせて${newlyItems.map((n) => n.item.title).join('、')}も少しずつ確認していきます。`}
+          {newlyItems.length > 0 && `あわせて${newlyItems.map((n) => n.item.title).join('、')}も確認していく予定です。`}
           無理のないペースで進めるので、相談に乗ってくれると助かります。」
         </div>
       </section>
@@ -142,13 +142,13 @@ export default function SurveyResult() {
       {/* アクションボタン */}
       <div className="btn-row" style={{ marginTop: '1.4rem' }}>
         <Link to="/items" className="btn btn-primary btn-block">
-          7つの準備一覧へ進む
+          準備項目の一覧へ進む
         </Link>
       </div>
 
       <div style={{ textAlign: 'center', marginTop: '.7rem' }}>
         <Link to="/" className="btn btn-ghost btn-small">
-          ホーム画面に戻る
+          ホームへ戻る
         </Link>
       </div>
     </div>

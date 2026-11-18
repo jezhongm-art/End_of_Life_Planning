@@ -147,12 +147,11 @@ export default function SurveyQuestions() {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '.35rem',
-              padding: '.25rem .75rem',
+              padding: '.2rem .65rem',
               borderRadius: '999px',
               background: 'var(--brand-tint)',
-              border: '1px solid var(--brand-tint-2)',
-              fontSize: '.88rem',
-              fontWeight: 800,
+              fontSize: '.84rem',
+              fontWeight: 700,
               color: 'var(--brand-deep)'
             }}
           >
@@ -170,13 +169,9 @@ export default function SurveyQuestions() {
           </button>
         </div>
 
-        <h2 className="qbig" style={{ marginTop: '.6rem' }}>
+        <h2 className="qbig" style={{ marginTop: '.65rem' }}>
           {node.text}
         </h2>
-
-        <p className="note" style={{ color: 'var(--muted)', marginTop: '.5rem' }}>
-          当てはまるものを一つ選んでください。
-        </p>
 
         {/* 選択肢 */}
         <div style={{ marginTop: '.8rem' }}>
@@ -214,7 +209,7 @@ export default function SurveyQuestions() {
           className="btn btn-sub"
           onClick={handleFinishEarly}
         >
-          ここで終了して結果を見る
+          終了して結果を見る
         </button>
       </div>
     </div>

@@ -121,7 +121,7 @@ export default function FamilyTalk() {
         ) : (
           <div className="celebrate" style={{ marginTop: '.7rem' }}>
             <p style={{ fontWeight: 800, color: 'var(--amber)' }}>
-              💌 家族からお返事が届きました！
+              家族からの返答が届きました。
             </p>
             <p style={{ marginTop: '.3rem', fontSize: '.96rem' }}>
               「{consult.replyText}」

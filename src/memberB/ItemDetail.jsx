@@ -66,7 +66,7 @@ export default function ItemDetail() {
       {currentItemState === 'done' && (
         <div className="celebrate">
           <p style={{ fontWeight: 800, color: 'var(--amber)' }}>
-            🎉 この項目は完了しました！
+            この項目は完了しました。
           </p>
           <p className="note" style={{ color: 'var(--body)', marginTop: '.2rem' }}>
             登録した「やってみたいこと」で自分にごほうびを贈ったり、家族と話し合ってみましょう。
