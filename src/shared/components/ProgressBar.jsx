@@ -17,8 +17,8 @@ export function ProgressBar({ pct = 0, label, showPct = true }) {
   )
 }
 
-export function QuizProgressBar({ current, total }) {
-  const pct = total > 0 ? Math.round((current / total) * 100) : 0
+export function QuizProgressBar({ current, total, answeredCount = 0 }) {
+  const pct = total > 0 ? Math.min(100, Math.round((answeredCount / total) * 100)) : 0
   return (
     <div style={{ margin: '.4rem 0 .8rem' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

@@ -1,14 +1,18 @@
 import { ITEMS, TOPICS } from '../memberB/items'
 import { QUIZ_ROOTS, QUIZ_NODES } from './questions'
 
-/* ---------- 動的アンケートフロー構築（全分野を順番に開始） ---------- */
+/* ---------- アンケートフロー構築（全8問固定フロー） ---------- */
 export function computeQuizFlow() {
-  const queue = []
-  TOPICS.forEach((tp) => {
-    const rootId = QUIZ_ROOTS[tp.id]
-    if (rootId) queue.push(rootId)
-  })
-  return queue
+  return [
+    'q_money_1',
+    'q_money_2',
+    'q_medical_1',
+    'q_medical_2',
+    'q_house_1',
+    'q_grave_1',
+    'q_family_1',
+    'q_pet_1'
+  ]
 }
 
 /* ---------- ルールベース回答分析（対応表照合） ---------- */
@@ -48,26 +52,26 @@ export function computeAnalysisFromAnswers(answers = {}, itemsMap = {}) {
   known.forEach((k) => { knownIds[k.id] = k })
 
   Object.keys(suggestMap).forEach((id) => {
-    const st = (itemsMap[id] && itemsMap[id].state) || "unknown"
+    const st = (itemsMap[id] && itemsMap[id].state) || "notyet"
     if (st === "done") {
       knownIds[id] = { id, reason: "すでに対策が完了しています。" }
-    } else if (st === "doing" || st === "review") {
-      knownIds[id] = { id, reason: `${suggestMap[id]}（現在も進行・見直し中です）` }
+    } else if (st === "doing") {
+      knownIds[id] = { id, reason: `${suggestMap[id]}（現在も進行中です）` }
     } else {
       newly.push({ id, reason: suggestMap[id] })
       delete knownIds[id]
     }
   })
 
-  // 未回答・スキップの項目は「準備不要」と判断せず「未確認」にする
+  // 未回答・スキップの項目は状況に応じて整理
   const unconfirmed = []
   ITEMS.forEach((it) => {
     const isNewly = newly.some((n) => n.id === it.id)
     const isKnown = !!knownIds[it.id]
     const isNaSug = naSuggest.some((n) => n.id === it.id)
-    const st = (itemsMap[it.id] && itemsMap[it.id].state) || "unknown"
+    const st = (itemsMap[it.id] && itemsMap[it.id].state) || "notyet"
     if (!isNewly && !isKnown && !isNaSug) {
-      if (st === "done" || st === "doing" || st === "review") {
+      if (st === "done" || st === "doing") {
         knownIds[it.id] = { id: it.id, reason: "以前からご自身で状況を登録済みです。" }
       } else {
         unconfirmed.push(it.id)

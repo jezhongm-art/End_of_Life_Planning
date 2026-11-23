@@ -4,6 +4,7 @@ import { SvgSprite } from './shared/components/SvgIcons'
 import { Header } from './shared/components/Header'
 import { BottomNav } from './shared/components/BottomNav'
 import { DevNavigationSheet } from './shared/components/DevNavigationSheet'
+import { ScrollToTop } from './shared/components/ScrollToTop'
 
 // ■ A担当の画面
 import Home from './memberA/Home'
@@ -78,6 +79,7 @@ export default function App() {
       </div>
 
       <div className="app">
+        <ScrollToTop />
         <Header
           title={title}
           onOpenSheet={() => setIsSheetOpen(true)}

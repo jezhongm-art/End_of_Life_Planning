@@ -93,26 +93,10 @@ export default function SurveyQuestions() {
     setAnswers(updatedAnswers)
     saveQuizAnswer(curQId, optIdx)
 
-    const opt = node.opts[optIdx]
-
-    // 現在のトピックの他の派生質問（以前の選択で挿入されたもの）を整理
-    const currentTopic = node.topic
-    let nextFlow = flow.filter((qId, idx) => {
-      if (idx <= curIdx) return true
-      const n = QUIZ_NODES[qId]
-      // 同じトピックで新分岐以外の派生質問は除外
-      return !(n && n.topic === currentTopic && qId !== opt.next)
-    })
-
-    if (opt.next && !nextFlow.includes(opt.next)) {
-      // 現在の次の位置に挿入
-      nextFlow.splice(curIdx + 1, 0, opt.next)
-    }
-    setFlow(nextFlow)
-
     // 次の質問へ、または終了
-    if (curIdx + 1 < nextFlow.length) {
+    if (curIdx + 1 < flow.length) {
       setCurIdx(curIdx + 1)
+      window.scrollTo(0, 0)
     } else {
       finishQuiz(updatedAnswers)
       navigate('/survey/result')
@@ -122,6 +106,7 @@ export default function SurveyQuestions() {
   const handlePrev = () => {
     if (curIdx > 0) {
       setCurIdx(curIdx - 1)
+      window.scrollTo(0, 0)
     } else {
       navigate('/survey')
     }
@@ -133,11 +118,16 @@ export default function SurveyQuestions() {
   }
 
   const selectedOpt = answers[curQId]
+  const answeredCount = flow.filter((qId) => answers[qId] !== undefined).length
 
   return (
     <div className="screen-anim">
       {/* 上部プログレスバー */}
-      <QuizProgressBar current={curIdx + 1} total={flow.length} />
+      <QuizProgressBar
+        current={curIdx + 1}
+        total={flow.length}
+        answeredCount={answeredCount}
+      />
 
       {/* 質問カード */}
       <section className="card">

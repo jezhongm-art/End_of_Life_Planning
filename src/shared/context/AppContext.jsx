@@ -18,7 +18,7 @@ export function makeBlankItems() {
   const obj = {}
   ITEMS.forEach((it) => {
     obj[it.id] = {
-      state: 'unknown',
+      state: 'notyet',
       done: it.steps.map(() => false)
     }
   })
@@ -83,10 +83,10 @@ export function sampleState() {
   s.items.note = { state: 'done', done: [true, true, true, true] }
   s.items.medical = { state: 'done', done: [true, true, true, true] }
   s.items.money = { state: 'doing', done: [true, true, false, false] }
-  s.items.insurance = { state: 'na', done: [false, false, false, false] }
-  s.items.house = { state: 'review', done: [true, false, false, false] }
+  s.items.insurance = { state: 'notyet', done: [false, false, false, false] }
+  s.items.house = { state: 'doing', done: [true, false, false, false] }
   s.items.grave = { state: 'notyet', done: [false, false, false, false] }
-  s.items.family = { state: 'unknown', done: [false, false, false] }
+  s.items.family = { state: 'notyet', done: [false, false, false] }
   s.items.pet = { state: 'notyet', done: [false, false, false, false] }
   s.priority = 'money'
   s.quizAnswers = {
@@ -153,7 +153,7 @@ export function AppProvider({ children }) {
 
   const updateItemStatus = (itemId, newState) => {
     setState((prev) => {
-      const currentItem = prev.items[itemId] || { state: 'unknown', done: [] }
+      const currentItem = prev.items[itemId] || { state: 'notyet', done: [] }
       return {
         ...prev,
         items: {
@@ -170,7 +170,7 @@ export function AppProvider({ children }) {
 
   const toggleItemStep = (itemId, stepIndex) => {
     setState((prev) => {
-      const currentItem = prev.items[itemId] || { state: 'unknown', done: [] }
+      const currentItem = prev.items[itemId] || { state: 'notyet', done: [] }
       const newDone = [...(currentItem.done || [])]
       newDone[stepIndex] = !newDone[stepIndex]
 
@@ -248,7 +248,7 @@ export function AppProvider({ children }) {
       // 新しく見つかった項目を自動で「未着手」などに更新
       const newItems = { ...prev.items }
       analysis.newly.forEach((n) => {
-        if (!newItems[n.id] || newItems[n.id].state === 'unknown') {
+        if (!newItems[n.id] || newItems[n.id].state === 'notyet') {
           newItems[n.id] = { ...(newItems[n.id] || {}), state: 'notyet' }
         }
       })
@@ -370,29 +370,25 @@ export function AppProvider({ children }) {
 
   // 進捗率と次の項目の算出
   const calcProgress = () => {
-    const applicable = ITEMS.filter((it) => (state.items[it.id]?.state || 'unknown') !== 'na')
-    const done = applicable.filter((it) => (state.items[it.id]?.state || 'unknown') === 'done')
-    const pct = applicable.length ? Math.round((done.length / applicable.length) * 100) : 0
+    const done = ITEMS.filter((it) => (state.items[it.id]?.state || 'notyet') === 'done')
+    const pct = ITEMS.length ? Math.round((done.length / ITEMS.length) * 100) : 0
 
     const countByState = {
-      unknown: 0,
       notyet: 0,
       doing: 0,
-      done: 0,
-      review: 0,
-      na: 0
+      done: 0
     }
     ITEMS.forEach((it) => {
-      const st = state.items[it.id]?.state || 'unknown'
+      const st = state.items[it.id]?.state || 'notyet'
       countByState[st] = (countByState[st] || 0) + 1
     })
 
     // 次の一歩（優先度設定があればそれ、なければ最初の未完了）
     let nextItemId = state.priority
-    if (!nextItemId || state.items[nextItemId]?.state === 'done' || state.items[nextItemId]?.state === 'na') {
+    if (!nextItemId || state.items[nextItemId]?.state === 'done') {
       const candidate = ITEMS.find((it) => {
-        const st = state.items[it.id]?.state || 'unknown'
-        return st !== 'done' && st !== 'na'
+        const st = state.items[it.id]?.state || 'notyet'
+        return st !== 'done'
       })
       nextItemId = candidate ? candidate.id : ITEMS[0].id
     }
@@ -400,7 +396,7 @@ export function AppProvider({ children }) {
 
     return {
       total: ITEMS.length,
-      applicableCount: applicable.length,
+      applicableCount: ITEMS.length,
       doneCount: done.length,
       pct,
       countByState,

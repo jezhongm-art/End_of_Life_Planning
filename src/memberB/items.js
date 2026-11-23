@@ -1,14 +1,11 @@
-/* ---------- 状態定義（6種類） ---------- */
+/* ---------- 状態定義（3種類） ---------- */
 export const STATE = {
-  unknown: { t: "未確認", cls: "s-unknown", btnCls: "b-unknown", mk: "?", help: "まだ確かめていない" },
-  notyet:  { t: "未着手", cls: "s-notyet",  btnCls: "b-notyet",  mk: "○", help: "やると決めたが、まだ始めていない" },
-  doing:   { t: "準備中", cls: "s-doing",   btnCls: "b-doing",   mk: "▶", help: "手順の途中まで進んでいる" },
-  done:    { t: "完了",   cls: "s-done",    btnCls: "b-done",    mk: "✓", help: "確認・準備が終わった" },
-  review:  { t: "要確認", cls: "s-review",  btnCls: "b-review",  mk: "!", help: "一度決めたが、見直しが必要" },
-  na:      { t: "対象外", cls: "s-na",      btnCls: "b-na",      mk: "−", help: "自分には必要ない（完了率から除く）" }
+  notyet: { t: "未着手", cls: "s-notyet", btnCls: "b-notyet", mk: "○", help: "やると決めたが、まだ始めていない" },
+  doing:  { t: "準備中", cls: "s-doing",  btnCls: "b-doing",  mk: "▶", help: "手順の途中まで進んでいる" },
+  done:   { t: "完了",   cls: "s-done",   btnCls: "b-done",   mk: "✓", help: "確認・準備が終わった" }
 }
 
-export const STATE_ORDER = ["unknown", "notyet", "doing", "done", "review", "na"]
+export const STATE_ORDER = ["notyet", "doing", "done"]
 
 /* ---------- 終活の7項目 ---------- */
 export const ITEMS = [

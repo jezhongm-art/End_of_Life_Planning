@@ -12,7 +12,7 @@ export default function ItemDetail() {
   const { state, updateItemStatus, toggleItemStep, setItemPriority } = useApp()
 
   const item = ITEMS.find((it) => it.id === itemId) || ITEMS[0]
-  const currentItemState = state.items[item.id]?.state || 'unknown'
+  const currentItemState = state.items[item.id]?.state || 'notyet'
   const currentItemDone = state.items[item.id]?.done || []
   const isPriority = state.priority === item.id
   const topicInfo = TOPICS.find((t) => t.id === item.topic)
@@ -50,7 +50,7 @@ export default function ItemDetail() {
             <StatusBadge state={currentItemState} />
           </div>
 
-          {!isPriority && currentItemState !== 'done' && currentItemState !== 'na' && (
+          {!isPriority && currentItemState !== 'done' && (
             <button
               type="button"
               className="btn btn-ghost btn-small"

@@ -37,7 +37,7 @@ export default function SurveyTopics() {
             生活状況アンケート
           </h2>
           <p className="n-sub" style={{ fontSize: '.9rem', marginTop: '.25rem', lineHeight: 1.55 }}>
-            現在の状況に合わせた準備項目を確認するための質問です（全6〜8問・約3分）。
+            現在の状況に合わせた準備項目を確認するための質問です（全8問・約3分）。
           </p>
         </div>
       </div>
@@ -68,7 +68,7 @@ export default function SurveyTopics() {
               1
             </span>
             <div>
-              <strong style={{ fontSize: '.94rem', color: 'var(--ink)' }}>所要時間：約3分（全6〜8問）</strong>
+              <strong style={{ fontSize: '.94rem', color: 'var(--ink)' }}>所要時間：約3分（全8問）</strong>
               <p style={{ fontSize: '.86rem', color: 'var(--muted)', marginTop: '.12rem', lineHeight: 1.5 }}>
                 大切な項目を短時間で確認できます。専門知識は不要です。
               </p>

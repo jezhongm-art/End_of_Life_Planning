@@ -83,7 +83,7 @@ export default function SurveyResult() {
         </div>
       ) : (
         newlyItems.map(({ item, reason }) => {
-          const itemState = state.items[item.id]?.state || 'unknown'
+          const itemState = state.items[item.id]?.state || 'notyet'
           return (
             <Link
               key={item.id}
@@ -110,7 +110,7 @@ export default function SurveyResult() {
             把握済みの項目（{knownItems.length}件）
           </h3>
           {knownItems.map(({ item, reason }) => {
-            const itemState = state.items[item.id]?.state || 'unknown'
+            const itemState = state.items[item.id]?.state || 'notyet'
             return (
               <div key={item.id} className="card" style={{ marginTop: '.65rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

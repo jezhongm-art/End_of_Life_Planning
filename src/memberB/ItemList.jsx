@@ -13,9 +13,9 @@ export default function ItemList() {
   const [filter, setFilter] = useState('all') // all | doing | done
 
   const filteredItems = ITEMS.filter((item) => {
-    const itemState = state.items[item.id]?.state || 'unknown'
+    const itemState = state.items[item.id]?.state || 'notyet'
     if (filter === 'doing') {
-      return itemState !== 'done' && itemState !== 'na'
+      return itemState !== 'done'
     }
     if (filter === 'done') {
       return itemState === 'done'
@@ -32,7 +32,7 @@ export default function ItemList() {
           終活に必要な基本的な7つの準備です。気になる項目を選んで手順を確認できます。
         </p>
         <div style={{ marginTop: '.6rem' }}>
-          <ProgressBar pct={progress.pct} label={`完了: ${progress.doneCount} / ${progress.applicableCount} 項目`} />
+          <ProgressBar pct={progress.pct} label={`完了: ${progress.doneCount} / ${progress.total} 項目`} />
         </div>
       </section>
 
@@ -92,11 +92,9 @@ export default function ItemList() {
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '.7rem', marginTop: '.5rem', flexWrap: 'wrap' }}>
                   <StatusBadge state={itemState} />
-                  {itemState !== 'na' && (
-                    <span style={{ fontSize: '.82rem', color: 'var(--muted)' }}>
-                      手順：{doneStepsCount} / {stepsCount}
-                    </span>
-                  )}
+                  <span style={{ fontSize: '.82rem', color: 'var(--muted)' }}>
+                    手順：{doneStepsCount} / {stepsCount}
+                  </span>
                 </div>
               </div>
 
