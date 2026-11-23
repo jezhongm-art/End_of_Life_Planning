@@ -2,36 +2,108 @@ import React, { useState } from 'react'
 import { useApp } from '../shared/context/AppContext'
 import { MEMO_QUESTIONS } from '../shared/wishes'
 import { Icon } from '../shared/components/SvgIcons'
+import { compressImage } from '../shared/utils/imageCompressor'
 
 export default function Memories() {
-  const { state, addMemo, deleteMemo } = useApp()
+  const { state, addMemo, updateMemo, deleteMemo, toast } = useApp()
 
   const [activeTab, setActiveTab] = useState('write') // write | album
   const [selectedCatIdx, setSelectedCatIdx] = useState(0)
   const [titleInput, setTitleInput] = useState('')
   const [textInput, setTextInput] = useState('')
   const [tagInput, setTagInput] = useState('')
+  const [imageInput, setImageInput] = useState(null)
+  const [editingMemoId, setEditingMemoId] = useState(null)
   const [expandedId, setExpandedId] = useState(null)
 
   const activeQuestion = MEMO_QUESTIONS[selectedCatIdx]
 
   const handleSelectCat = (idx) => {
     setSelectedCatIdx(idx)
-    setTitleInput(MEMO_QUESTIONS[idx].q)
+    if (!editingMemoId) {
+      setTitleInput(MEMO_QUESTIONS[idx].q)
+    }
   }
 
+  // 写真選択・圧縮処理
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    try {
+      toast('写真を最適化しています...')
+      const compressed = await compressImage(file)
+      setImageInput(compressed)
+      toast('写真を追加しました')
+    } catch (err) {
+      toast('写真の読み込みに失敗しました')
+      console.error(err)
+    }
+    e.target.value = ''
+  }
+
+  const handleRemoveImage = () => {
+    setImageInput(null)
+    toast('写真を外しました')
+  }
+
+  // 編集開始
+  const handleStartEdit = (memo) => {
+    setEditingMemoId(memo.id)
+    setTitleInput(memo.title)
+    setTextInput(memo.text)
+    setTagInput(memo.tag || '')
+    setImageInput(memo.image || null)
+
+    const idx = MEMO_QUESTIONS.findIndex((mq) => mq.cat === memo.cat)
+    if (idx >= 0) setSelectedCatIdx(idx)
+
+    setActiveTab('write')
+    window.scrollTo(0, 0)
+  }
+
+  // 編集キャンセル
+  const handleCancelEdit = () => {
+    setEditingMemoId(null)
+    setTitleInput('')
+    setTextInput('')
+    setTagInput('')
+    setImageInput(null)
+    setActiveTab('album')
+  }
+
+  // 保存（新規または更新）
   const handleSave = (e) => {
     e.preventDefault()
     if (!textInput.trim()) return
-    addMemo({
-      cat: activeQuestion.cat,
-      title: titleInput || activeQuestion.q,
-      text: textInput.trim(),
-      tag: tagInput.trim()
-    })
+
+    const title = titleInput.trim() || activeQuestion.q
+    const text = textInput.trim()
+    const tag = tagInput.trim()
+    const cat = activeQuestion.cat
+
+    if (editingMemoId) {
+      updateMemo(editingMemoId, {
+        title,
+        text,
+        tag,
+        image: imageInput,
+        cat
+      })
+      setEditingMemoId(null)
+    } else {
+      addMemo({
+        cat,
+        title,
+        text,
+        tag,
+        image: imageInput
+      })
+    }
+
     setTextInput('')
     setTitleInput('')
     setTagInput('')
+    setImageInput(null)
     setActiveTab('album')
   }
 
@@ -46,12 +118,9 @@ export default function Memories() {
     <div className="screen-anim">
       {/* 画面説明 */}
       <section className="card">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '.4rem' }}>
-          <h2 className="card-title">希望・思い出の記録</h2>
-          <span className="tag tag-plus">+α機能</span>
-        </div>
+        <h2 className="card-title">希望・思い出の記録</h2>
         <p className="card-sub">
-          これまでの人生の大切な思い出や、家族に伝えておきたい気持ちを文章として残せます。
+          これまでの人生の大切な思い出や、ご家族へ残したい写真・メッセージを手帳のように記録できます。
         </p>
 
         {/* タブ切り替え */}
@@ -59,9 +128,16 @@ export default function Memories() {
           <button
             type="button"
             className={`segtab ${activeTab === 'write' ? 'on' : ''}`}
-            onClick={() => setActiveTab('write')}
+            onClick={() => {
+              if (activeTab !== 'write') {
+                if (!editingMemoId) {
+                  setTitleInput(activeQuestion.q)
+                }
+                setActiveTab('write')
+              }
+            }}
           >
-            思い出を書く
+            {editingMemoId ? '思い出を編集する' : '思い出を書く'}
           </button>
           <button
             type="button"
@@ -132,6 +208,38 @@ export default function Memories() {
                 </div>
               </div>
 
+              {/* 写真添付エリア */}
+              <div style={{ marginTop: '.8rem' }}>
+                <label className="card-sub" style={{ fontWeight: 700 }}>思い出の写真（任意・1枚）</label>
+                {imageInput ? (
+                  <div className="img-preview-wrap">
+                    <img src={imageInput} alt="思い出の写真プレビュー" />
+                    <button
+                      type="button"
+                      className="img-remove-btn"
+                      onClick={handleRemoveImage}
+                      aria-label="写真を外す"
+                    >
+                      ✕ 写真を外す
+                    </button>
+                  </div>
+                ) : (
+                  <label className="img-upload-zone" style={{ marginTop: '.3rem' }}>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={handleFileChange}
+                    />
+                    <Icon name="clip" style={{ width: '1.4rem', height: '1.4rem', color: 'var(--brand)' }} />
+                    <span style={{ fontWeight: 700, fontSize: '.95rem' }}>写真を追加する</span>
+                    <span style={{ fontSize: '.82rem', color: 'var(--muted)' }}>
+                      カメラで撮影するか、保存されている写真を選べます
+                    </span>
+                  </label>
+                )}
+              </div>
+
               <div style={{ marginTop: '.8rem' }}>
                 <label className="card-sub" style={{ fontWeight: 700 }}>タグ（任意）</label>
                 <input
@@ -144,14 +252,24 @@ export default function Memories() {
                 />
               </div>
 
-              <button
-                type="submit"
-                className="btn btn-primary btn-block"
-                style={{ marginTop: '1.1rem' }}
-                disabled={!textInput.trim()}
-              >
-                思い出を保存する
-              </button>
+              <div className="btn-row" style={{ marginTop: '1.2rem' }}>
+                {editingMemoId && (
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={handleCancelEdit}
+                  >
+                    編集をキャンセル
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  className="btn btn-primary btn-block"
+                  disabled={!textInput.trim()}
+                >
+                  {editingMemoId ? '変更を保存する' : '思い出を保存する'}
+                </button>
+              </div>
             </form>
           </section>
         </>
@@ -159,7 +277,10 @@ export default function Memories() {
         /* アルバム一覧 */
         <div style={{ marginTop: '1rem' }}>
           {state.memos.length === 0 ? (
-            <div className="empty">まだ保存された思い出はありません。「思い出を書く」から記録してみましょう。</div>
+            <div className="empty">
+              まだ保存された思い出はありません。<br />
+              「思い出を書く」から大切な記憶や写真を記録してみましょう。
+            </div>
           ) : (
             state.memos.map((m) => {
               const isExpanded = expandedId === m.id
@@ -173,21 +294,54 @@ export default function Memories() {
                     className="mcard-btn"
                     onClick={() => setExpandedId(isExpanded ? null : m.id)}
                   >
-                    <span className="m-title">{m.title}</span>
-                    <p className="m-text">{m.text}</p>
+                    <div className="mcard-layout">
+                      <div className="mcard-content">
+                        <span className="m-title">{m.title}</span>
+                        <p className="m-text">{m.text}</p>
+                      </div>
+                      {m.image && !isExpanded && (
+                        <img
+                          src={m.image}
+                          alt={m.title}
+                          className="m-thumb"
+                        />
+                      )}
+                    </div>
+
+                    {/* 展開時の写真大サイズ表示 */}
+                    {m.image && isExpanded && (
+                      <img
+                        src={m.image}
+                        alt={m.title}
+                        className="m-full-img"
+                      />
+                    )}
+
                     <div className="m-meta">
                       <span>{m.date}</span>
                       <span className="tag">{m.cat}</span>
                       {m.tag && <span className="tag tag-brand">{m.tag}</span>}
+                      {m.image && <span className="tag tag-amber">写真あり</span>}
                     </div>
                   </button>
 
                   {isExpanded && (
-                    <div style={{ marginTop: '.8rem', display: 'flex', justifyContent: 'flex-end' }}>
+                    <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '.6rem', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-small"
+                        onClick={() => handleStartEdit(m)}
+                      >
+                        編集する
+                      </button>
                       <button
                         type="button"
                         className="btn btn-danger btn-small"
-                        onClick={() => deleteMemo(m.id)}
+                        onClick={() => {
+                          if (window.confirm('この思い出を削除してもよろしいですか？')) {
+                            deleteMemo(m.id)
+                          }
+                        }}
                       >
                         削除する
                       </button>

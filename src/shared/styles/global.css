@@ -1220,6 +1220,88 @@ details.acc .acc-body > *:first-child { margin-top: 0; }
 .mopen { border-color: var(--brand); background: var(--brand-tint); }
 .mopen .m-text { -webkit-line-clamp: unset; display: block; white-space: pre-wrap; }
 
+/* ---------- 思い出の写真スタイル ---------- */
+.mcard-layout {
+  display: flex;
+  gap: .8rem;
+  align-items: flex-start;
+}
+.mcard-content {
+  flex: 1;
+  min-width: 0;
+}
+.m-thumb {
+  width: 4.8rem;
+  height: 4.8rem;
+  border-radius: var(--radius-s);
+  object-fit: cover;
+  flex: none;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.m-full-img {
+  width: 100%;
+  max-height: 20rem;
+  border-radius: var(--radius-s);
+  object-fit: contain;
+  background: rgba(0, 0, 0, .04);
+  margin-top: .7rem;
+  border: 1px solid var(--line);
+}
+.img-upload-zone {
+  border: 2px dashed var(--line-strong);
+  border-radius: var(--radius-s);
+  padding: 1.1rem;
+  text-align: center;
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .4rem;
+}
+.img-upload-zone:hover {
+  border-color: var(--brand);
+  background: var(--brand-tint);
+}
+.img-preview-wrap {
+  position: relative;
+  margin-top: .6rem;
+  border-radius: var(--radius-s);
+  overflow: hidden;
+  border: 2px solid var(--line);
+  background: #000;
+  display: flex;
+  justify-content: center;
+}
+.img-preview-wrap img {
+  max-width: 100%;
+  max-height: 18rem;
+  object-fit: contain;
+  display: block;
+}
+.img-remove-btn {
+  position: absolute;
+  top: .5rem;
+  right: .5rem;
+  background: rgba(27, 43, 51, .85);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: .3rem .75rem;
+  font-size: .8rem;
+  font-family: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+}
+.img-remove-btn:hover {
+  background: var(--rose);
+}
+
 .wishcard {
   border: 2px solid var(--line);
   border-radius: var(--radius);

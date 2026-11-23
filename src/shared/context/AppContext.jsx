@@ -40,24 +40,7 @@ export function defaultState() {
       { id: 'w1', text: '家族みんなで食事やお祝いをする', done: false }
     ],
     rewardWishId: 'w1',
-    memos: [
-      {
-        id: 'm1',
-        cat: '子どもの頃',
-        title: '子どもの頃、夢中になっていたこと',
-        text: '川で魚を追いかけていたこと。夕方になると母が名前を呼びに来て、それでもあと少しと粘っていました。',
-        date: '2026年10月12日',
-        tag: ''
-      },
-      {
-        id: 'm2',
-        cat: '家族・人とのつながり',
-        title: 'ご家族へ伝えたいこと',
-        text: 'いつも気にかけてくれてありがとう。元気に笑って過ごしてくれるのが、いちばんの安心です。',
-        date: '2026年11月2日',
-        tag: '家族へのメッセージ'
-      }
-    ],
+    memos: [],
     talkLogs: [
       {
         id: 't1',
@@ -301,12 +284,13 @@ export function AppProvider({ children }) {
     toast('ごほうび目標に設定しました')
   }
 
-  const addMemo = ({ cat, title, text, tag }) => {
+  const addMemo = ({ cat, title, text, tag, image }) => {
     const newMemo = {
       id: `m_${Date.now()}`,
       cat,
       title,
       text,
+      image: image || null,
       date: new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' }),
       tag: tag || ''
     }
@@ -315,6 +299,14 @@ export function AppProvider({ children }) {
       memos: [newMemo, ...prev.memos]
     }))
     toast('思い出を保存しました')
+  }
+
+  const updateMemo = (id, partial) => {
+    setState((prev) => ({
+      ...prev,
+      memos: prev.memos.map((m) => (m.id === id ? { ...m, ...partial } : m))
+    }))
+    toast('思い出を更新しました')
   }
 
   const deleteMemo = (id) => {
@@ -421,6 +413,7 @@ export function AppProvider({ children }) {
     toggleWish,
     setRewardWish,
     addMemo,
+    updateMemo,
     deleteMemo,
     addTalkLog,
     updateRewardConsult,
