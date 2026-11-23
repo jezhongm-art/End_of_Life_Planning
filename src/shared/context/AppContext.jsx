@@ -270,10 +270,26 @@ export function AppProvider({ children }) {
   }
 
   const toggleWish = (wishId) => {
+    setState((prev) => {
+      const target = prev.wishes.find((w) => w.id === wishId)
+      const nextDone = !target?.done
+      if (nextDone && target?.text) {
+        toast(`「${target.text}」を達成しました！`)
+      }
+      return {
+        ...prev,
+        wishes: prev.wishes.map((w) => (w.id === wishId ? { ...w, done: nextDone } : w))
+      }
+    })
+  }
+
+  const deleteWish = (wishId) => {
     setState((prev) => ({
       ...prev,
-      wishes: prev.wishes.map((w) => (w.id === wishId ? { ...w, done: !w.done } : w))
+      wishes: prev.wishes.filter((w) => w.id !== wishId),
+      rewardWishId: prev.rewardWishId === wishId ? null : prev.rewardWishId
     }))
+    toast('やってみたいことを削除しました')
   }
 
   const setRewardWish = (wishId) => {
@@ -411,6 +427,7 @@ export function AppProvider({ children }) {
     resetQuiz,
     addWish,
     toggleWish,
+    deleteWish,
     setRewardWish,
     addMemo,
     updateMemo,

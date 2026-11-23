@@ -1311,7 +1311,13 @@ details.acc .acc-body > *:first-child { margin-top: 0; }
   box-shadow: var(--shadow);
 }
 .wishcard.is-reward { border-color: #c88a24; background: #fffbf0; }
-.wishcard.is-done { opacity: .85; background: var(--surface-2); }
+.wishcard.is-done {
+  border-color: var(--brand-tint-2);
+  background: var(--brand-tint);
+}
+.wishcard.is-done.is-reward {
+  border-color: #c88a24;
+}
 
 .preview-box {
   border: 2px dashed var(--blue);

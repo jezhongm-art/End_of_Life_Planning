@@ -4,7 +4,7 @@ import { WISH_PRESETS } from '../shared/wishes'
 import { Icon } from '../shared/components/SvgIcons'
 
 export default function WishList() {
-  const { state, addWish, toggleWish, setRewardWish } = useApp()
+  const { state, addWish, toggleWish, setRewardWish, deleteWish } = useApp()
   const [inputText, setInputText] = useState('')
 
   const handleAddCustom = (e) => {
@@ -16,6 +16,12 @@ export default function WishList() {
 
   const handleAddPreset = (text) => {
     addWish(text)
+  }
+
+  const handleDelete = (wish) => {
+    if (window.confirm(`「${wish.text}」をリストから削除してもよろしいですか？`)) {
+      deleteWish(wish.id)
+    }
   }
 
   const rewardWish = state.wishes.find((w) => w.id === state.rewardWishId)
@@ -106,32 +112,56 @@ export default function WishList() {
                   onChange={() => toggleWish(w.id)}
                 />
                 <div style={{ flex: 1 }}>
-                  <span
-                    style={{
-                      fontSize: '1.02rem',
-                      fontWeight: 700,
-                      textDecoration: w.done ? 'line-through' : 'none',
-                      color: w.done ? 'var(--muted)' : 'var(--ink)'
-                    }}
-                  >
-                    {w.text}
-                  </span>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem', marginTop: '.5rem', flexWrap: 'wrap' }}>
-                    {isReward ? (
-                      <span className="tag tag-amber">
-                        <Icon name="star" style={{ width: '.9rem', height: '.9rem' }} /> ごほうび設定中
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flexWrap: 'wrap' }}>
+                    <span
+                      style={{
+                        fontSize: '1.02rem',
+                        fontWeight: 700,
+                        textDecoration: w.done ? 'line-through' : 'none',
+                        color: w.done ? 'var(--muted)' : 'var(--ink)'
+                      }}
+                    >
+                      {w.text}
+                    </span>
+                    {w.done && (
+                      <span className="tag tag-brand" style={{ fontWeight: 800 }}>
+                        ✓ 達成済み
                       </span>
-                    ) : (
-                      <button
-                        type="button"
-                        className="btn btn-ghost btn-small"
-                        style={{ minHeight: '2.2rem', padding: '0 .7rem', fontSize: '.8rem' }}
-                        onClick={() => setRewardWish(w.id)}
-                      >
-                        ごほうびに設定
-                      </button>
                     )}
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '.6rem', flexWrap: 'wrap', gap: '.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '.6rem', flexWrap: 'wrap' }}>
+                      {isReward ? (
+                        <span className="tag tag-amber">
+                          <Icon name="star" style={{ width: '.9rem', height: '.9rem' }} /> ごほうび設定中
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-small"
+                          style={{ minHeight: '2.1rem', padding: '0 .7rem', fontSize: '.8rem' }}
+                          onClick={() => setRewardWish(w.id)}
+                        >
+                          ごほうびに設定
+                        </button>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-small"
+                      style={{
+                        minHeight: '2.1rem',
+                        padding: '0 .7rem',
+                        fontSize: '.8rem',
+                        color: 'var(--rose)'
+                      }}
+                      onClick={() => handleDelete(w)}
+                      aria-label={`${w.text}を削除`}
+                    >
+                      削除
+                    </button>
                   </div>
                 </div>
               </div>
