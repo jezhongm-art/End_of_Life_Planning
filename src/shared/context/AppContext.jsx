@@ -28,7 +28,7 @@ export function makeBlankItems() {
 export function defaultState() {
   return {
     seenGuide: false,
-    name: '山田 花子',
+    name: '',
     textSize: '2',
     priority: 'money',
     items: makeBlankItems(),

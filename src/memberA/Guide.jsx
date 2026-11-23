@@ -1,20 +1,34 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useApp } from '../shared/context/AppContext'
 import { Icon } from '../shared/components/SvgIcons'
 
 export default function Guide() {
   const navigate = useNavigate()
-  const { updateSettings } = useApp()
+  const { state, updateSettings } = useApp()
+  const [nameInput, setNameInput] = useState(state.name || '')
+
+  const saveNameAndComplete = () => {
+    const trimmed = nameInput.trim()
+    updateSettings({
+      name: trimmed,
+      seenGuide: true
+    })
+  }
 
   const handleStartSurvey = () => {
-    updateSettings({ seenGuide: true })
+    saveNameAndComplete()
     navigate('/survey')
   }
 
   const handleGoHome = () => {
-    updateSettings({ seenGuide: true })
+    saveNameAndComplete()
     navigate('/')
+  }
+
+  const handleGoItems = () => {
+    saveNameAndComplete()
+    navigate('/items')
   }
 
   return (
@@ -44,7 +58,7 @@ export default function Guide() {
             <div>
               <p style={{ fontWeight: 800, color: 'var(--ink)' }}>簡単な質問に答える</p>
               <p className="note" style={{ marginTop: '.2rem' }}>
-                関心のある分野を選んで数問答えるだけ。分からない質問はパスしても大丈夫です。
+                全8問の質問に答えるだけ。分からない質問はパスしても大丈夫です。
               </p>
             </div>
           </div>
@@ -94,6 +108,24 @@ export default function Guide() {
         </ul>
       </section>
 
+      {/* お名前の登録 */}
+      <section className="card" style={{ marginTop: '1rem' }}>
+        <h3 className="card-title" style={{ fontSize: '1.04rem' }}>お名前の登録（任意）</h3>
+        <p className="card-sub">
+          ホーム画面などでご自身に向けた呼びかけとして使用します。ニックネームでも構いません（未入力の場合は「ご利用者」様と表示されます）。
+        </p>
+        <div style={{ marginTop: '.65rem' }}>
+          <input
+            type="text"
+            className="input"
+            value={nameInput}
+            onChange={(e) => setNameInput(e.target.value)}
+            placeholder="例：山田 太郎"
+            aria-label="お名前"
+          />
+        </div>
+      </section>
+
       {/* アクションボタン */}
       <div style={{ marginTop: '1.2rem', display: 'flex', flexDirection: 'column', gap: '.65rem' }}>
         <button
@@ -113,9 +145,22 @@ export default function Guide() {
         </button>
 
         <div style={{ textAlign: 'center', marginTop: '.3rem' }}>
-          <Link to="/items" className="note" style={{ textDecoration: 'underline' }}>
+          <button
+            type="button"
+            onClick={handleGoItems}
+            className="note"
+            style={{
+              background: 'none',
+              border: 'none',
+              textDecoration: 'underline',
+              cursor: 'pointer',
+              fontSize: '.9rem',
+              color: 'var(--muted)',
+              fontFamily: 'inherit'
+            }}
+          >
             準備項目の一覧を直接見る →
-          </Link>
+          </button>
         </div>
       </div>
     </div>

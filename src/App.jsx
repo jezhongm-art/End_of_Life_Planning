@@ -1,9 +1,8 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom'
 import { SvgSprite } from './shared/components/SvgIcons'
 import { Header } from './shared/components/Header'
 import { BottomNav } from './shared/components/BottomNav'
-import { DevNavigationSheet } from './shared/components/DevNavigationSheet'
 import { ScrollToTop } from './shared/components/ScrollToTop'
 
 // ■ A担当の画面
@@ -24,7 +23,6 @@ import FamilyTalk from './memberB/FamilyTalk'
 import Settings from './memberC/Settings'
 
 export default function App() {
-  const [isSheetOpen, setIsSheetOpen] = useState(false)
   const location = useLocation()
 
   // 画面ごとのヘッダータイトル定義
@@ -33,7 +31,7 @@ export default function App() {
       case '/':
         return null // ブランドロゴ表示
       case '/guide':
-        return '初回案内'
+        return 'アプリの使い方'
       case '/survey':
         return '生活状況アンケート'
       case '/survey/q':
@@ -63,27 +61,9 @@ export default function App() {
     <>
       <SvgSprite />
 
-      {/* 開発・チーム共有用プロトタイプバー */}
-      <div className="protobar">
-        <div className="pb-in">
-          <span className="pb-tag">3人チーム開発環境</span>
-          <span className="pb-now">{title || '終活みちしるべ（ホーム）'}</span>
-          <button
-            type="button"
-            className="pb-btn"
-            onClick={() => setIsSheetOpen(true)}
-          >
-            画面一覧・テスト
-          </button>
-        </div>
-      </div>
-
       <div className="app">
         <ScrollToTop />
-        <Header
-          title={title}
-          onOpenSheet={() => setIsSheetOpen(true)}
-        />
+        <Header title={title} />
 
         <main id="screen">
           <Routes>
@@ -115,11 +95,6 @@ export default function App() {
       </div>
 
       <BottomNav />
-
-      <DevNavigationSheet
-        isOpen={isSheetOpen}
-        onClose={() => setIsSheetOpen(false)}
-      />
     </>
   )
 }

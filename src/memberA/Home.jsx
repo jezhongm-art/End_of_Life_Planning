@@ -1,5 +1,5 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
+import React, { useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useApp } from '../shared/context/AppContext'
 import { ProgressBar } from '../shared/components/ProgressBar'
 import { StatusBadge } from '../memberB/StatusBadge'
@@ -7,7 +7,16 @@ import { Icon } from '../shared/components/SvgIcons'
 import { STATE } from '../memberB/items'
 
 export default function Home() {
+  const navigate = useNavigate()
   const { state, calcProgress } = useApp()
+
+  // 初回利用時は自動的に「使い方説明（導入画面）」へナビゲート
+  useEffect(() => {
+    if (!state.seenGuide) {
+      navigate('/guide', { replace: true })
+    }
+  }, [state.seenGuide, navigate])
+
   const progress = calcProgress()
   const nextItem = progress.nextItem
   const nextItemState =(state.items[nextItem.id] && state.items[nextItem.id].state) || 'notyet'
@@ -153,6 +162,13 @@ export default function Home() {
           </div>
         </div>
       </details>
+
+      {/* 使い方案内への導線 */}
+      <div style={{ marginTop: '1.2rem', textAlign: 'center' }}>
+        <Link to="/guide" className="btn btn-ghost btn-block" style={{ fontSize: '.9rem' }}>
+          アプリの使いかた（初回案内）を見る
+        </Link>
+      </div>
     </div>
   )
 }
