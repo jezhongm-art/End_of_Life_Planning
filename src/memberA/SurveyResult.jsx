@@ -15,12 +15,12 @@ export default function SurveyResult() {
     return (
       <div className="screen-anim">
         <div className="empty">
-          まだアンケートの回答がありません。<br />
-          質問に答えると、ご状況に合わせた準備項目をご案内します。
+          まだアンケートのお答えがありません。<br />
+          質問に答えると、いまの状況に合った準備をご案内します。
         </div>
         <div className="btn-row" style={{ marginTop: '1rem' }}>
           <Link to="/survey" className="btn btn-primary btn-block">
-            アンケートを開始する
+            アンケートを始める
           </Link>
         </div>
       </div>
@@ -38,7 +38,6 @@ export default function SurveyResult() {
     return { ...k, item }
   }).filter((k) => !!k.item)
 
-  // おすすめの次の一歩（新しく見つかったものから1つ、なければ優先項目）
   const topPick = newlyItems.length > 0
     ? newlyItems[0]
     : (ITEMS[0] ? { id: ITEMS[0].id, item: ITEMS[0], reason: '基本となる準備から始めましょう' } : null)
@@ -57,10 +56,10 @@ export default function SurveyResult() {
           </div>
           <div className="n-body">
             <h2 className="n-title">
-              途中の回答による仮の結果（{quizStatus.answeredCount} / {quizStatus.totalCount} 問）
+              途中の答えによる仮の結果（{quizStatus.answeredCount} / {quizStatus.totalCount} 問）
             </h2>
             <p className="n-sub">
-              まだ最後まで回答が完了していません。残りの質問に答えると、より正確な提案になります。
+              まだ最後まで終わっていません。残りの質問に答えると、より合った案内になります。
             </p>
             <div style={{ marginTop: '.65rem' }}>
               <Link to="/survey/q" className="btn btn-amber btn-small">
@@ -75,9 +74,9 @@ export default function SurveyResult() {
             <Icon name="check" stroke />
           </div>
           <div className="n-body">
-            <h2 className="n-title">アンケート集計結果</h2>
+            <h2 className="n-title">アンケートの結果</h2>
             <p className="n-sub">
-              ご回答内容にもとづき、優先して確認が必要な項目をまとめました。
+              お答えいただいた内容をもとに、まず確認をおすすめする項目をまとめました。
             </p>
           </div>
         </div>
@@ -87,7 +86,7 @@ export default function SurveyResult() {
       {topPick && topPick.item && (
         <section className="hero" style={{ marginTop: '1rem' }}>
           <div className="h-eyebrow">
-            <Icon name="star" style={{ width: '1rem', height: '1rem' }} /> 優先する取り組み
+            <Icon name="star" style={{ width: '1rem', height: '1rem' }} /> まず取り組みたいこと
           </div>
           <h3 className="h-title">{topPick.item.title}</h3>
           <p className="card-sub">{topPick.item.desc}</p>
@@ -101,14 +100,14 @@ export default function SurveyResult() {
               className="btn btn-primary"
               style={{ flex: 1 }}
             >
-              手順を確認する
+              進め方を見る
             </Link>
             <button
               type="button"
               className="btn btn-ghost"
               onClick={() => handleSetPriority(topPick.item.id)}
             >
-              次にすることに設定
+              ホームの「次にすること」に設定
             </button>
           </div>
         </section>
@@ -118,7 +117,7 @@ export default function SurveyResult() {
       <h3 className="sec-title">確認をおすすめする項目（{newlyItems.length}件）</h3>
       {newlyItems.length === 0 ? (
         <div className="empty">
-          回答された範囲では、新しく優先すべき項目はありません。
+          お答えいただいた範囲では、新しく急いで確認が必要な項目はありません。
         </div>
       ) : (
         newlyItems.map(({ item, reason }) => {
@@ -145,7 +144,7 @@ export default function SurveyResult() {
       {/* すでに把握・対応できている項目 */}
       {knownItems.length > 0 && (
         <details className="acc" style={{ marginTop: '1.2rem' }}>
-          <summary>すでに把握・進行中の項目を見る（{knownItems.length}件）</summary>
+          <summary>すでに整理できている・進めている項目（{knownItems.length}件）</summary>
           <div className="acc-body">
             {knownItems.map(({ item, reason }) => {
               const itemState = state.items[item.id]?.state || 'notyet'
@@ -168,10 +167,10 @@ export default function SurveyResult() {
         <summary>家族に相談するときの伝え方例を見る</summary>
         <div className="acc-body">
           <p className="card-sub">
-            家族に相談するとき、そのまま伝えられる文面の例です。
+            ご家族に話すとき、そのまま使っていただける言葉の例です。
           </p>
           <div className="qbubble" style={{ marginTop: '.7rem' }}>
-            「終活みちしるべで確認したところ、まずは『
+            「終活みちしるべで確かめたところ、まずは『
             {topPick?.item?.title || '準備項目'}』から整理を始めようと思っています。
             {newlyItems.length > 0 && `あわせて${newlyItems.map((n) => n.item.title).join('、')}も確認していく予定です。`}
             無理のないペースで進めるので、相談に乗ってくれると助かります。」
@@ -188,7 +187,7 @@ export default function SurveyResult() {
 
       <div style={{ textAlign: 'center', marginTop: '.7rem' }}>
         <Link to="/" className="btn btn-ghost btn-small">
-          ホームへ戻る
+          ホームにもどる
         </Link>
       </div>
     </div>

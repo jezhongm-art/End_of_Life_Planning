@@ -159,6 +159,32 @@ body {
   height: 1.35rem;
 }
 
+.backbtn {
+  height: 2.5rem;
+  padding: 0 .65rem 0 .45rem;
+  flex: none;
+  border: 2px solid var(--line-strong);
+  border-radius: var(--radius-s);
+  background: #fff;
+  color: var(--ink);
+  font-family: var(--font-head);
+  font-weight: 800;
+  font-size: .86rem;
+  display: inline-flex;
+  align-items: center;
+  gap: .2rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color .15s ease;
+}
+.backbtn:hover {
+  background: var(--surface-2);
+}
+.backbtn .ic-s {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
 .textsize-btn {
   height: 2.5rem;
   padding: 0 .6rem;
@@ -1523,6 +1549,7 @@ html[data-ts="3"] .statusgrid {
   .brandmark { width: 2.2rem; height: 2.2rem; }
   .brandmark .ic { width: 1.25rem; height: 1.25rem; }
   .iconbtn { width: 2.35rem; height: 2.35rem; }
+  .backbtn { height: 2.35rem; padding: 0 .5rem 0 .35rem; font-size: .8rem; }
   .textsize-btn { height: 2.35rem; padding: 0 .45rem; font-size: .76rem; }
   .top { padding: .45rem .65rem; margin: 0 -.65rem .85rem; }
   .app { padding: 0 .65rem 8.5rem; }

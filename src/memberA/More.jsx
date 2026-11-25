@@ -22,8 +22,8 @@ export default function More() {
             <Icon name="star" />
           </div>
           <div className="r-main">
-            <span className="r-title">やってみたいことリスト（{state.wishes.length}件）</span>
-            <span className="r-sub">楽しみやごほうび目標を登録・管理します</span>
+            <span className="r-title">やってみたいこと一覧（{state.wishes.length}件）</span>
+            <span className="r-sub">楽しみやごほうび目標を登録・確認します</span>
           </div>
           <Icon name="chev" stroke className="chev" />
         </Link>
@@ -33,8 +33,8 @@ export default function More() {
             <Icon name="heart" />
           </div>
           <div className="r-main">
-            <span className="r-title">希望・思い出の記録（{state.memos.length}件）</span>
-            <span className="r-sub">人生の思い出や写真、メッセージを残します</span>
+            <span className="r-title">希望・思い出帳（{state.memos.length}件）</span>
+            <span className="r-sub">人生の思い出や写真、言葉を残します</span>
           </div>
           <Icon name="chev" stroke className="chev" />
         </Link>
@@ -70,7 +70,7 @@ export default function More() {
           </div>
           <div className="r-main">
             <span className="r-title">基本設定・データ管理</span>
-            <span className="r-sub">お名前・文字サイズ・サンプルデータの体験・初期化</span>
+            <span className="r-sub">お名前・文字の大きさ・入力例のお試し・消去</span>
           </div>
           <Icon name="chev" stroke className="chev" />
         </Link>

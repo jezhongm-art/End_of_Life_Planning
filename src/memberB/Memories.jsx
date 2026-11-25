@@ -145,9 +145,9 @@ export default function Memories() {
     <div className="screen-anim">
       {/* 画面説明 */}
       <section className="card">
-        <h2 className="card-title">希望・思い出の記録</h2>
+        <h2 className="card-title">希望・思い出帳</h2>
         <p className="card-sub">
-          これまでの人生の大切な思い出や、ご家族へ残したい写真・メッセージを手帳のように記録できます。
+          これまでの人生の大切な思い出や、ご家族へ残したい写真・言葉を書き留められます。
         </p>
 
         {/* タブ切り替え */}
@@ -155,7 +155,7 @@ export default function Memories() {
           className="segtabs"
           style={{ marginTop: '.9rem', marginBottom: 0 }}
           role="tablist"
-          aria-label="思い出の記録メニュー"
+          aria-label="思い出帳の切り替え"
         >
           <button
             id="memories-tab-write"
@@ -174,7 +174,7 @@ export default function Memories() {
             }}
             onKeyDown={handleTabKeyDown}
           >
-            {editingMemoId ? '思い出を編集する' : '思い出を書く'}
+            {editingMemoId ? '思い出を直す' : '思い出を書く'}
           </button>
           <button
             id="memories-tab-album"
@@ -186,7 +186,7 @@ export default function Memories() {
             onClick={() => setActiveTab('album')}
             onKeyDown={handleTabKeyDown}
           >
-            思い出アルバム（{state.memos.length}件）
+            思い出帳一覧（{state.memos.length}件）
           </button>
         </div>
       </section>
@@ -293,7 +293,7 @@ export default function Memories() {
 
               <div style={{ marginTop: '.8rem' }}>
                 <label htmlFor="memo-tag-input" className="card-sub" style={{ fontWeight: 700, display: 'block' }}>
-                  タグ（任意）
+                  目印の言葉（書かなくても構いません）
                 </label>
                 <input
                   id="memo-tag-input"
@@ -302,7 +302,7 @@ export default function Memories() {
                   style={{ marginTop: '.3rem' }}
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
-                  placeholder="例）家族へのメッセージ、宝物"
+                  placeholder="例）家族への感謝、大切な写真"
                 />
               </div>
 
@@ -313,7 +313,7 @@ export default function Memories() {
                     className="btn btn-ghost"
                     onClick={handleCancelEdit}
                   >
-                    編集をキャンセル
+                    やり直しをやめる
                   </button>
                 )}
                 <button

@@ -4,9 +4,15 @@ import { useApp } from '../shared/context/AppContext'
 import { QUIZ_FLOW_RANGE } from '../memberC/rules'
 import { Icon } from '../shared/components/SvgIcons'
 
+const TEXT_SIZE_OPTIONS = [
+  { id: '1', label: '標準' },
+  { id: '2', label: '大きめ' },
+  { id: '3', label: '特大' }
+]
+
 export default function Guide() {
   const navigate = useNavigate()
-  const { state, updateSettings } = useApp()
+  const { state, updateSettings, setTextSize } = useApp()
   const [nameInput, setNameInput] = useState(state.name || '')
 
   const saveNameAndComplete = () => {
@@ -42,48 +48,71 @@ export default function Guide() {
         <div className="n-body">
           <h2 className="n-title">終活みちしるべへようこそ</h2>
           <p className="n-sub">
-            終活は、これからの人生を安心して、自分らしく楽しむための前向きな準備です。
-            一度に全部やろうとせず、できるところから進めていきましょう。
+            これからの毎日を安心して楽しむための準備ノートです。一度に全部やらず、できることから一つずつ進められます。
           </p>
         </div>
       </div>
 
-      {/* 3ステップの流れ図 */}
+      {/* 文字の大きさ調整（最初に選べるように上部に配置） */}
       <section className="card" style={{ marginTop: '1rem' }}>
-        <h3 className="card-title">アプリの使いかた（3ステップ）</h3>
-        <p className="card-sub">迷わず進められるよう、アプリがナビゲートします。</p>
+        <h3 className="card-title" style={{ fontSize: '1.04rem' }}>
+          文字の大きさ（いつでも変えられます）
+        </h3>
+        <p className="card-sub">読みやすい大きさをお選びください。</p>
+        <div
+          className="segtabs segtabs-3"
+          style={{ marginTop: '.65rem', marginBottom: 0 }}
+          role="group"
+          aria-label="文字の大きさの選択"
+        >
+          {TEXT_SIZE_OPTIONS.map((opt) => {
+            const isSelected = (state.textSize || '2') === opt.id
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                className={`segtab ${isSelected ? 'on' : ''}`}
+                aria-pressed={isSelected}
+                onClick={() => setTextSize(opt.id)}
+              >
+                {opt.label}
+              </button>
+            )
+          })}
+        </div>
+      </section>
+
+      {/* 3つの流れ（簡潔に整理） */}
+      <section className="card" style={{ marginTop: '1rem' }}>
+        <h3 className="card-title">使いかた（3つの流れ）</h3>
 
         <div className="flow">
           <div className="flow-step">
             <span className="flow-num">1</span>
             <div>
               <p style={{ fontWeight: 800, color: 'var(--ink)' }}>簡単な質問に答える</p>
-              <p className="note" style={{ marginTop: '.2rem' }}>
-                ご状況に合わせて{QUIZ_FLOW_RANGE.min}〜{QUIZ_FLOW_RANGE.max}問に分岐する質問に答えるだけ。分からない質問はパスしても大丈夫です。
+              <p className="note" style={{ marginTop: '.15rem' }}>
+                暮らしに合わせて{QUIZ_FLOW_RANGE.min}〜{QUIZ_FLOW_RANGE.max}問の質問が出ます。わからない質問は飛ばせます。
               </p>
             </div>
           </div>
-
-          <div className="flow-arrow">▼</div>
 
           <div className="flow-step">
             <span className="flow-num">2</span>
             <div>
-              <p style={{ fontWeight: 800, color: 'var(--ink)' }}>必要な準備が自動で分かる</p>
-              <p className="note" style={{ marginTop: '.2rem' }}>
-                回答に合わせて、いま優先してやるべきことと理由をご案内します。
+              <p style={{ fontWeight: 800, color: 'var(--ink)' }}>いま必要な準備がわかる</p>
+              <p className="note" style={{ marginTop: '.15rem' }}>
+                お答えに合わせて、優先したい準備と理由をご案内します。
               </p>
             </div>
           </div>
-
-          <div className="flow-arrow">▼</div>
 
           <div className="flow-step">
             <span className="flow-num">3</span>
             <div>
               <p style={{ fontWeight: 800, color: 'var(--ink)' }}>手順と相談先を見て進める</p>
-              <p className="note" style={{ marginTop: '.2rem' }}>
-                具体的な準備手順や公的窓口の案内をチェックしながら、マイペースに進められます。
+              <p className="note" style={{ marginTop: '.15rem' }}>
+                最初の一歩から、ご自身のペースで進められます。
               </p>
             </div>
           </div>
@@ -95,16 +124,12 @@ export default function Guide() {
         <h3 className="card-title">安心してご利用いただくために</h3>
         <ul className="stepnum" style={{ marginTop: '.4rem' }}>
           <li>
-            <strong>入力データはこの端末のみに保存されます</strong><br />
-            外部サーバーには送信されず、設定画面からいつでも一括削除できます。
+            <strong>入力した内容はこの端末の中だけに保存されます</strong><br />
+            外に送信されることはなく、設定からいつでもすべて消去できます。
           </li>
           <li>
             <strong>アンケートを受けなくても使えます</strong><br />
-            準備項目一覧から、気になる項目を直接選んで確認することも可能です。
-          </li>
-          <li>
-            <strong>文字サイズはお好みの大きさに変更できます</strong><br />
-            右上の文字ボタンまたは設定から、いつでも読みやすい大きさに調節できます。
+            準備項目の一覧から、気になる項目を直接選んで確認できます。
           </li>
         </ul>
       </section>
@@ -112,10 +137,10 @@ export default function Guide() {
       {/* お名前の登録 */}
       <section className="card" style={{ marginTop: '1rem' }}>
         <h3 className="card-title" style={{ fontSize: '1.04rem' }}>
-          <label htmlFor="guide-name-input">お名前の登録（任意）</label>
+          <label htmlFor="guide-name-input">お名前の登録（書かなくても進めます）</label>
         </h3>
         <p className="card-sub">
-          ホーム画面などでご自身に向けた呼びかけとして使用します。ニックネームでも構いません（未入力の場合は「ご利用者」様と表示されます）。
+          ホーム画面の呼びかけに使います。ニックネームでも構いません。
         </p>
         <div style={{ marginTop: '.65rem' }}>
           <input
@@ -136,7 +161,7 @@ export default function Guide() {
           className="btn btn-primary btn-block"
           onClick={handleStartSurvey}
         >
-          質問に答えて準備を見つける（推奨）
+          質問に答えて準備を見つける（おすすめ）
         </button>
 
         <button
@@ -144,7 +169,7 @@ export default function Guide() {
           className="btn btn-ghost btn-block"
           onClick={handleGoHome}
         >
-          アンケートを受けずにホームへ進む
+          質問を飛ばしてホームへ進む
         </button>
 
         <div style={{ textAlign: 'center', marginTop: '.3rem' }}>

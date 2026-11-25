@@ -46,11 +46,11 @@ export default function App() {
       case '/items/detail':
         return '準備項目の詳細'
       case '/wishes':
-        return 'やってみたいことリスト'
+        return 'やってみたいこと一覧'
       case '/settings':
-        return '基本設定'
+        return '基本設定・データ管理'
       case '/memories':
-        return '希望・思い出の記録'
+        return '希望・思い出帳'
       case '/family':
         return '家族との対話・相談練習'
       case '/more':
@@ -136,7 +136,7 @@ export default function App() {
 
         <p className="foot">
           終活みちしるべ｜Webアプリ版<br />
-          入力内容はこの端末のブラウザ（localStorage）に保存され、設定からいつでも削除できます。
+          入力した内容はこの端末のブラウザ内だけに保存され、設定からいつでもすべて消去できます。
         </p>
       </div>
 

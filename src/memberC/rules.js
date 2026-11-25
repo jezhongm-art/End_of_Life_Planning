@@ -2,27 +2,36 @@ import { ITEMS } from '../memberB/items'
 import { QUIZ_NODES } from './questions'
 
 export const QUIZ_FLOW_RANGE = {
-  min: 7,
-  max: 12
+  min: 9,
+  max: 15
 }
 
 /* ---------- アンケートフロー構築（回答に応じた分岐フロー） ---------- */
 export function computeQuizFlow(answers = {}) {
   const flow = []
 
-  // 1. お金・保険
+  // 1. お金・通帳
   flow.push('q_money_1')
   if (answers.q_money_1 !== undefined && answers.q_money_1 !== 0 && answers.q_money_1 !== 4) {
     flow.push('q_money_2')
   }
 
-  // 2. 医療・介護
+  // 2. 保険・年金
+  flow.push('q_insurance_1')
+
+  // 3. スマホ・ネット契約（利用している場合にくわしい質問へ分岐）
+  flow.push('q_digital_1')
+  if (answers.q_digital_1 === 0) {
+    flow.push('q_digital_2')
+  }
+
+  // 4. 医療・介護
   flow.push('q_medical_1')
   if (answers.q_medical_1 === 1 || answers.q_medical_1 === 2) {
     flow.push('q_medical_2')
   }
 
-  // 3. 住まい（持ち家・賃貸で分岐）
+  // 5. 住まい（持ち家・賃貸で分岐）
   flow.push('q_house_type')
   if (answers.q_house_type === 0) {
     flow.push('q_house_own')
@@ -30,17 +39,17 @@ export function computeQuizFlow(answers = {}) {
     flow.push('q_house_rent')
   }
 
-  // 4. お墓・葬儀
+  // 6. お墓・葬儀
   flow.push('q_grave_1')
   if (answers.q_grave_1 === 1 || answers.q_grave_1 === 2) {
     flow.push('q_grave_2')
   }
 
-  // 5. 家族に伝えること（終活ノートと家族との話し合いの2項目）
+  // 7. 家族に伝えること（終活ノートと家族との話し合いの2項目）
   flow.push('q_family_1')
   flow.push('q_family_2')
 
-  // 6. ペットの終活
+  // 8. ペットの終活
   flow.push('q_pet_1')
   if (answers.q_pet_1 === 1) {
     flow.push('q_pet_2')
@@ -83,7 +92,7 @@ export function computeAnalysisFromAnswers(answers = {}, itemsMap = {}, options 
     if (opt.known) {
       opt.known.forEach((itemId) => {
         if (!suggestMap[itemId]) {
-          known.push({ id: itemId, reason: opt.reason || "すでに把握・対応できています。" })
+          known.push({ id: itemId, reason: opt.reason || "すでに確認・整理できています。" })
         }
       })
     }

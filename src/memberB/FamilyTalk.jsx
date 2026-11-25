@@ -111,7 +111,7 @@ export default function FamilyTalk() {
       <section className="card">
         <div style={{ display: 'flex', alignItems: 'center', gap: '.4rem', flexWrap: 'wrap' }}>
           <h2 className="card-title">家族との対話・相談練習</h2>
-          <span className="tag tag-plus">+α機能</span>
+          <span className="tag tag-plus">暮らしのノート</span>
         </div>
         <p className="card-sub">
           話題の準備・相談の練習、話し合いの記録、過去の記録を目的に合わせて使い分けられます。
@@ -187,10 +187,10 @@ export default function FamilyTalk() {
               </div>
               <div className="n-body">
                 <p className="n-title" style={{ fontSize: '.96rem' }}>
-                  アプリ内の練習（シミュレーション）です
+                  アプリ内の練習機能です
                 </p>
                 <p className="n-sub" style={{ color: 'var(--ink)', fontSize: '.86rem' }}>
-                  ボタンを押しても、実際にご家族へメールやメッセージは送信されません。実際に送りたいときは、作成された文面をコピーしてご利用ください。
+                  ボタンを押しても、実際にご家族へメールやメッセージは送信されません。実際に送りたいときは、作成された文面を書き写すかコピーしてご利用ください。
                 </p>
               </div>
             </div>
@@ -240,7 +240,7 @@ export default function FamilyTalk() {
                     className="btn btn-ghost btn-small"
                     onClick={handleResetSimulation}
                   >
-                    下書きをリセット
+                    下書きを最初に戻す
                   </button>
                 </div>
               </div>
@@ -361,7 +361,7 @@ export default function FamilyTalk() {
               まだ話し合いの記録はありません。<br />
               「記録を書く」からご家族と話した内容を残せます。<br />
               <span style={{ display: 'inline-block', marginTop: '.45rem', fontSize: '.86rem' }}>
-                （操作感を試したい場合は <Link to="/settings" style={{ color: 'var(--brand-deep)', fontWeight: 700 }}>基本設定</Link> からサンプルデータを読み込めます）
+                （操作感を試したい場合は <Link to="/settings" style={{ color: 'var(--brand-deep)', fontWeight: 700 }}>基本設定</Link> から入力例を読み込めます）
               </span>
             </div>
           ) : (

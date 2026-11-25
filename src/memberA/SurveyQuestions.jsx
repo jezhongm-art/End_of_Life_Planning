@@ -25,8 +25,12 @@ export default function SurveyQuestions() {
   const curQId = flow[curIdx]
   const node = curQId ? QUIZ_NODES[curQId] : null
 
-  // 質問が切り替わったときに質問文へフォーカスを移動
+  // 質問が切り替わったときに質問文へフォーカスを移動し、読み上げ中なら止める
   useEffect(() => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel()
+      setIsSpeaking(false)
+    }
     if (!hasMountedRef.current) {
       hasMountedRef.current = true
       return
@@ -39,31 +43,32 @@ export default function SurveyQuestions() {
   // 音声読み上げ
   const handleToggleSpeak = () => {
     if (!('speechSynthesis' in window)) {
-      toast('このブラウザは音声読み上げに対応していません')
+      toast('お使いのブラウザは音声読み上げに対応していません')
       return
     }
 
     if (isSpeaking) {
       window.speechSynthesis.cancel()
       setIsSpeaking(false)
-      toast('読み上げを停止しました')
+      toast('読み上げを止めました')
       return
     }
 
     if (!node) return
     window.speechSynthesis.cancel()
-    const textToSpeak = `${node.label}についての質問です。${node.text}。選択肢をお答えください。`
+    const optionsText = node.opts.map((o, i) => `${i + 1}番、${o.t}`).join('。')
+    const textToSpeak = `${node.label}についての質問です。${node.text}。選択肢は、${optionsText}、です。`
     const u = new SpeechSynthesisUtterance(textToSpeak)
     u.lang = 'ja-JP'
-    u.rate = 0.92
+    u.rate = 0.9
     u.onend = () => setIsSpeaking(false)
     u.onerror = () => setIsSpeaking(false)
     setIsSpeaking(true)
     window.speechSynthesis.speak(u)
-    toast('読み上げています')
+    toast('質問と選択肢を読み上げています')
   }
 
-  // 画面遷移時に読み上げを止める
+  // 画面離脱時に読み上げを止める
   useEffect(() => {
     return () => {
       if ('speechSynthesis' in window) {
@@ -88,18 +93,32 @@ export default function SurveyQuestions() {
     )
   }
 
+  const selectedOpt = answers[curQId]
+  const isLastQuestion = curIdx + 1 >= flow.length
+  const answeredCount = flow.filter((qId) => answers[qId] !== undefined).length
+
+  // 誤タップ防止：選択肢タップ時は選択状態の記録と分岐更新のみ行い、自動では進まない
   const handleSelectOption = (optIdx) => {
     const mergedAnswers = { ...answers, [curQId]: optIdx }
     const { flow: nextFlow, answers: cleanedAnswers } = pruneAnswersToFlow(mergedAnswers)
 
     setAnswers(cleanedAnswers)
     setFlow(nextFlow)
+    saveQuizProgress(cleanedAnswers)
+  }
 
+  // 「次の質問へ」または「完了して結果を見る」
+  const handleNext = () => {
+    if (selectedOpt === undefined) {
+      toast('上の選択肢からひとつお選びください')
+      return
+    }
+    const { flow: nextFlow, answers: cleanedAnswers } = pruneAnswersToFlow(answers)
     const currentPos = nextFlow.indexOf(curQId)
     const nextIdx = currentPos >= 0 ? currentPos + 1 : curIdx + 1
 
     if (nextIdx < nextFlow.length) {
-      saveQuizProgress(cleanedAnswers)
+      setFlow(nextFlow)
       setCurIdx(nextIdx)
       window.scrollTo(0, 0)
     } else {
@@ -121,7 +140,7 @@ export default function SurveyQuestions() {
     const { answers: cleanedAnswers } = pruneAnswersToFlow(answers)
     const ok = saveQuizProgress(cleanedAnswers)
     if (ok) {
-      toast('回答を途中保存しました。「続きから答える」で再開できます')
+      toast('途中まで保存しました。「続きから答える」で再開できます')
     }
     navigate('/survey')
   }
@@ -132,19 +151,16 @@ export default function SurveyQuestions() {
     navigate('/survey/result')
   }
 
-  const selectedOpt = answers[curQId]
-  const answeredCount = flow.filter((qId) => answers[qId] !== undefined).length
-
   return (
     <div className="screen-anim">
-      {/* 上部プログレスバー */}
+      {/* 上部進捗バー */}
       <QuizProgressBar
         current={curIdx + 1}
         total={flow.length}
         answeredCount={answeredCount}
       />
       <p className="note" style={{ marginTop: '-.4rem', marginBottom: '.7rem', fontSize: '.82rem' }}>
-        ※ ご回答の内容に合わせて質問数が変わります
+        ※ お答えに合わせて質問数が変わります（選んでから下の「{isLastQuestion ? '結果を見る' : '次の質問へ'}」を押してください）
       </p>
 
       {/* 質問カード */}
@@ -169,12 +185,12 @@ export default function SurveyQuestions() {
           <button
             type="button"
             className="btn btn-ghost btn-small"
-            style={{ minHeight: '2.2rem', padding: '0 .65rem', fontSize: '.82rem' }}
+            style={{ minHeight: '2.35rem', padding: '0 .75rem', fontSize: '.84rem' }}
             onClick={handleToggleSpeak}
             aria-pressed={isSpeaking}
           >
             <Icon name="speaker" />
-            {isSpeaking ? '停止' : '読み上げる'}
+            {isSpeaking ? '読み上げを止める' : '音声で聴く'}
           </button>
         </div>
 
@@ -207,16 +223,32 @@ export default function SurveyQuestions() {
             )
           })}
         </div>
+
+        {/* 確認してから進む主ボタン */}
+        <div style={{ marginTop: '1.1rem' }}>
+          <button
+            type="button"
+            className="btn btn-primary btn-block"
+            disabled={selectedOpt === undefined}
+            onClick={handleNext}
+          >
+            {selectedOpt === undefined
+              ? '上の選択肢からひとつお選びください'
+              : isLastQuestion
+                ? '回答を完了して結果を見る'
+                : '次の質問へ進む'}
+          </button>
+        </div>
       </section>
 
-      {/* ナビゲーション操作ボタン */}
-      <div className="btn-row" style={{ marginTop: '1.1rem' }}>
+      {/* サブ操作ボタン */}
+      <div className="btn-row" style={{ marginTop: '1rem' }}>
         <button
           type="button"
           className="btn btn-ghost"
           onClick={handlePrev}
         >
-          {curIdx > 0 ? '前の質問へ' : '案内へ戻る'}
+          {curIdx > 0 ? '前の質問にもどる' : '案内にもどる'}
         </button>
 
         <button
@@ -224,7 +256,7 @@ export default function SurveyQuestions() {
           className="btn btn-sub"
           onClick={handlePauseAndSave}
         >
-          途中保存して中断する
+          途中保存して休む
         </button>
       </div>
 
@@ -235,7 +267,7 @@ export default function SurveyQuestions() {
             className="btn btn-ghost btn-small"
             onClick={handlePreviewPartial}
           >
-            ここまでの回答で仮の結果を見る（{answeredCount}問回答済み）
+            ここまでの答えで仮の結果を見る（{answeredCount}問回答済み）
           </button>
         </div>
       )}

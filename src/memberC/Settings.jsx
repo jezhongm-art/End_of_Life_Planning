@@ -45,7 +45,7 @@ export default function Settings() {
       <section className="card">
         <h2 className="card-title">基本設定・データ管理</h2>
         <p className="card-sub">
-          お名前や文字サイズの変更、サンプルデータの体験、保存データの管理を行います。
+          お名前や文字の大きさの変更、入力例（お試しデータ）の確認、保存データの消去を行います。
         </p>
       </section>
 
@@ -103,11 +103,11 @@ export default function Settings() {
         </div>
       </section>
 
-      {/* サンプルデータ体験 */}
+      {/* 入力例（お試しデータ）体験 */}
       <section className="card" style={{ marginTop: '1rem' }}>
-        <h3 className="card-title" style={{ fontSize: '1.04rem' }}>サンプルデータの体験</h3>
+        <h3 className="card-title" style={{ fontSize: '1.04rem' }}>入力例（お試しデータ）を試す</h3>
         <p className="card-sub">
-          初期状態ではご家族のお名前や会話記録は空になっています。入力例や進捗イメージを確認したいときだけ、サンプルデータを読み込めます。
+          最初の状態ではご家族のお名前や会話記録は空になっています。記入例や進み具合のイメージを見たいときだけ、入力例を読み込めます。
         </p>
         <div style={{ marginTop: '.7rem' }}>
           <button
@@ -115,7 +115,7 @@ export default function Settings() {
             className="btn btn-sub btn-block"
             onClick={() => setShowSampleConfirm(true)}
           >
-            サンプルデータを読み込む
+            入力例（お試しデータ）を読み込む
           </button>
         </div>
       </section>
@@ -136,10 +136,10 @@ export default function Settings() {
       {/* データ削除 */}
       <section className="card" style={{ marginTop: '1rem', borderColor: 'var(--rose)' }}>
         <h3 className="card-title" style={{ color: 'var(--rose)', fontSize: '1.04rem' }}>
-          データの全削除（初期化）
+          データの全消去
         </h3>
         <p className="card-sub">
-          このブラウザに保存されている進捗・アンケート回答・メモ・話し合い記録をすべて消去します。
+          この端末のブラウザ内に保存されている進み具合・アンケートのお答え・思い出・話し合い記録をすべて消去します。
         </p>
         <div style={{ marginTop: '.7rem' }}>
           <button
@@ -147,17 +147,17 @@ export default function Settings() {
             className="btn btn-danger btn-block"
             onClick={() => setShowResetConfirm(true)}
           >
-            保存データをすべて初期化する
+            保存データをすべて消去する
           </button>
         </div>
       </section>
 
-      {/* サンプルデータ読み込み確認ダイアログ */}
+      {/* 入力例読み込み確認ダイアログ */}
       <AccessibleDialog
         isOpen={showSampleConfirm}
         onClose={() => setShowSampleConfirm(false)}
-        title="サンプルデータを読み込みますか？"
-        description="現在の進捗や記録はサンプルデータ（記入例）に置き換わります。あとから「保存データをすべて初期化する」でいつでも空に戻せます。"
+        title="入力例（お試しデータ）を読み込みますか？"
+        description="いまの進み具合や記録が、記入例（お試しデータ）に置き換わります。あとから「保存データをすべて消去する」でいつでも空の状態に戻せます。"
         initialFocusRef={sampleCancelRef}
       >
         <div className="btn-row" style={{ marginTop: '1.2rem' }}>

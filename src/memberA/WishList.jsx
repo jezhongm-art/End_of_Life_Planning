@@ -36,9 +36,9 @@ export default function WishList() {
     <div className="screen-anim">
       {/* 画面説明 */}
       <section className="card">
-        <h2 className="card-title">やってみたいことリスト</h2>
+        <h2 className="card-title">やってみたいこと一覧</h2>
         <p className="card-sub">
-          行きたい場所や家族と楽しみたいことを登録しましょう。
+          行きたい場所や家族と楽しみたいことを書き出しましょう。
           準備が進んだときのごほうびとして設定することもできます。
         </p>
 
@@ -93,12 +93,12 @@ export default function WishList() {
             style={{ marginTop: '.7rem' }}
             disabled={!inputText.trim()}
           >
-            リストに追加する
+            一覧に追加する
           </button>
         </form>
       </section>
 
-      {/* 登録済みリスト */}
+      {/* 登録済み一覧 */}
       <h3 className="sec-title" style={{ marginTop: '1.4rem' }}>
         登録したやってみたいこと（{state.wishes.length}件）
       </h3>

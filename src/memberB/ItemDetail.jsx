@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { useApp } from '../shared/context/AppContext'
 import { ITEMS, TOPICS, STATE } from './items'
@@ -9,7 +9,8 @@ export default function ItemDetail() {
   const [searchParams] = useSearchParams()
   const itemId = searchParams.get('id') || ITEMS[0].id
 
-  const { state, updateItemStatus, toggleItemStep, setItemPriority } = useApp()
+  const { state, updateItemStatus, toggleItemStep, setItemPriority, toast } = useApp()
+  const [lastCompletedStepIdx, setLastCompletedStepIdx] = useState(null)
 
   const item = ITEMS.find((it) => it.id === itemId) || ITEMS[0]
   const currentItemState = state.items[item.id]?.state || 'notyet'
@@ -20,10 +21,29 @@ export default function ItemDetail() {
   const topicInfo = TOPICS.find((t) => t.id === item.topic)
 
   const handleStateChange = (newSt) => {
+    setLastCompletedStepIdx(null)
     updateItemStatus(item.id, newSt)
   }
 
+  const handleCompleteFirstStep = (index) => {
+    const ok = toggleItemStep(item.id, index)
+    if (ok) {
+      setLastCompletedStepIdx(index)
+      toast(`手順 ${index + 1} を完了にしました`)
+    }
+  }
+
+  const handleUndoLastStep = () => {
+    if (lastCompletedStepIdx === null) return
+    const ok = toggleItemStep(item.id, lastCompletedStepIdx)
+    if (ok) {
+      toast(`手順 ${lastCompletedStepIdx + 1} を完了前に戻しました`)
+      setLastCompletedStepIdx(null)
+    }
+  }
+
   const handleToggleStep = (index) => {
+    setLastCompletedStepIdx(null)
     toggleItemStep(item.id, index)
   }
 
@@ -63,14 +83,34 @@ export default function ItemDetail() {
         </div>
       </section>
 
+      {/* 誤操作時の取り消し導線（直前に手順を完了にした場合のみ表示） */}
+      {lastCompletedStepIdx !== null && currentItemDone[lastCompletedStepIdx] && (
+        <div className="notice notice-blue" style={{ marginTop: '.9rem' }} role="status">
+          <div className="n-body">
+            <p className="n-title" style={{ fontSize: '.96rem' }}>
+              手順 {lastCompletedStepIdx + 1} を完了にしました
+            </p>
+            <div style={{ marginTop: '.45rem' }}>
+              <button
+                type="button"
+                className="btn btn-ghost btn-small"
+                onClick={handleUndoLastStep}
+              >
+                間違えたので元に戻す
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 最初の一歩（または完了祝い） */}
       {currentItemState === 'done' || firstUncheckedIdx === -1 ? (
         <div className="celebrate" style={{ marginTop: '1rem' }}>
           <p style={{ fontWeight: 800, color: 'var(--brand-deep)', fontSize: '1.05rem' }}>
-            この項目の手順が完了しました。
+            この項目の手順が終わりました。
           </p>
           <p className="note" style={{ color: 'var(--body)', marginTop: '.25rem' }}>
-            登録した「やってみたいこと」で自分にごほうびを贈ったり、家族と話し合ってみましょう。
+            登録した「やってみたいこと」で自分にごほうびを贈ったり、ご家族と話してみましょう。
           </p>
           <div style={{ marginTop: '.7rem' }}>
             <Link to="/wishes" className="btn btn-amber btn-small">
@@ -94,7 +134,7 @@ export default function ItemDetail() {
             <button
               type="button"
               className="btn btn-primary btn-block"
-              onClick={() => handleToggleStep(firstUncheckedIdx)}
+              onClick={() => handleCompleteFirstStep(firstUncheckedIdx)}
             >
               この手順を完了にする
             </button>
@@ -109,7 +149,7 @@ export default function ItemDetail() {
         </summary>
         <div className="acc-body">
           <p className="card-sub">
-            チェックを入れると進行状況が自動で記録されます。
+            押すと進み具合が自動で記録されます（もう一度押すと元に戻せます）。
           </p>
           <div style={{ marginTop: '.5rem' }}>
             {item.steps.map((step, idx) => {
@@ -136,10 +176,10 @@ export default function ItemDetail() {
 
       <details className="acc">
         <summary>
-          状態を手動で変更する（現在：{STATE[currentItemState]?.t}）
+          状態を手動で切り替える（現在：{STATE[currentItemState]?.t}）
         </summary>
         <div className="acc-body">
-          <p className="card-sub">ご自身の現在の進行に合わせて選んでください。</p>
+          <p className="card-sub">今の進み具合に合わせてお選びください。</p>
           <StatusPicker current={currentItemState} onChange={handleStateChange} />
         </div>
       </details>
@@ -182,7 +222,7 @@ export default function ItemDetail() {
       {/* フッターリンク */}
       <div className="btn-row" style={{ marginTop: '1.2rem' }}>
         <Link to="/items" className="btn btn-ghost btn-block">
-          一覧に戻る
+          一覧にもどる
         </Link>
       </div>
     </div>

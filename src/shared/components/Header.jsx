@@ -27,14 +27,15 @@ export function Header({ title, showBack }) {
   return (
     <header className="top">
       {shouldShowBack ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '.45rem', flex: 1, minWidth: 0 }}>
           <button
             type="button"
-            className="iconbtn"
-            aria-label="前の画面に戻る"
+            className="backbtn"
+            aria-label="前の画面にもどる"
             onClick={() => navigate(-1)}
           >
             <Icon name="back" stroke />
+            <span>もどる</span>
           </button>
           <h1 className="vtitle">{title}</h1>
         </div>
@@ -55,8 +56,8 @@ export function Header({ title, showBack }) {
           type="button"
           className="textsize-btn"
           onClick={cycleTextSize}
-          title="文字サイズを切り替える"
-          aria-label={`文字サイズを切り替える（現在：${textSizeName}）`}
+          title="文字の大きさを切り替える"
+          aria-label={`文字の大きさを切り替える（現在：${textSizeName}）`}
         >
           {textSizeLabel}
         </button>

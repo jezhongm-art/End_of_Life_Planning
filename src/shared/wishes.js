@@ -48,10 +48,10 @@ export const SCREENS_INFO = [
   { path: "/survey/q",     no: "04", name: "アンケート：質問（分岐）",       kind: "core", note: "回答に応じた分岐・途中保存と再開" },
   { path: "/survey/result",no: "05", name: "質問結果・準備の提案",           kind: "core", note: "対応表照合・次の一歩・途中再開導線" },
   { path: "/items",        no: "06", name: `準備項目一覧（${ITEMS.length}項目）`, kind: "core", note: "件数自動取得・状態管理・優先選択" },
-  { path: "/items/detail", no: "07", name: "準備項目の詳細・ガイド",         kind: "core", note: "最初の一歩・詳細情報の折りたたみ表示" },
-  { path: "/wishes",       no: "08", name: "やってみたいことリスト",         kind: "core", note: "選択式と自由入力・ごほうび設定" },
-  { path: "/settings",     no: "09", name: "基本設定・データ管理",           kind: "core", note: "名前・文字サイズ・サンプル適用・データ初期化" },
-  { path: "/memories",     no: "10", name: "希望・思い出の記録＆アルバム",   kind: "plus", note: "文章・写真保存・一覧・編集・削除" },
-  { path: "/family",       no: "11", name: "家族との対話・相談練習",         kind: "plus", note: "目的別タブ・模擬体験の明示・話し合い記録" },
-  { path: "/more",         no: "12", name: "その他の機能メニュー",           kind: "core", note: "補足機能・設定・案内への入口" }
+  { path: "/items/detail", no: "07", name: "準備項目の詳細・案内",           kind: "core", note: "最初の一歩・詳細情報の折りたたみ表示" },
+  { path: "/wishes",       no: "08", name: "やってみたいこと一覧",           kind: "core", note: "選択式と自由入力・ごほうび設定" },
+  { path: "/settings",     no: "09", name: "基本設定・データ管理",           kind: "core", note: "名前・文字サイズ・入力例の体験・消去" },
+  { path: "/memories",     no: "10", name: "希望・思い出帳",                 kind: "plus", note: "文章・写真保存・一覧・編集・削除" },
+  { path: "/family",       no: "11", name: "家族との対話・相談の練習",       kind: "plus", note: "目的別切り替え・練習表示・話し合い記録" },
+  { path: "/more",         no: "12", name: "その他の機能",                   kind: "core", note: "暮らしのノート・設定・案内への入口" }
 ]

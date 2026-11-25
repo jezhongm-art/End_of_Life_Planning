@@ -60,10 +60,14 @@ export function sampleState() {
   s.items.grave = { state: 'notyet', done: [false, false, false, false] }
   s.items.family = { state: 'notyet', done: [false, false, false] }
   s.items.pet = { state: 'notyet', done: [false, false, false, false] }
+  s.items.digital = { state: 'notyet', done: [false, false, false, false] }
   s.priority = 'money'
   s.quizAnswers = {
     q_money_1: 2,
     q_money_2: 0,
+    q_insurance_1: 1,
+    q_digital_1: 0,
+    q_digital_2: 1,
     q_medical_1: 0,
     q_house_type: 0,
     q_house_own: 1,
@@ -83,7 +87,7 @@ export function sampleState() {
     {
       id: 't1',
       date: '2026年11月5日',
-      partner: '結子（娘・サンプル）',
+      partner: '結子（娘・入力例）',
       decided: '緊急の連絡先は長女にする',
       pending: 'お墓のことは来月もう一度話す',
       memo: 'まずは通帳の場所から整理していくことになった。'
@@ -538,12 +542,12 @@ export function AppProvider({ children }) {
 
   const loadBlankPreset = () => {
     const blank = defaultState()
-    return commitState(blank, { successMessage: '初期（未開始）状態にリセットしました' })
+    return commitState(blank, { successMessage: '最初の状態に戻しました' })
   }
 
   const loadSamplePreset = () => {
     const sample = sampleState()
-    return commitState(sample, { successMessage: 'サンプルデータを読み込みました' })
+    return commitState(sample, { successMessage: '入力例（お試しデータ）を読み込みました' })
   }
 
   const resetAllData = () => {
