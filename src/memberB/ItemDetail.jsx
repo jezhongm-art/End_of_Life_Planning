@@ -1,16 +1,19 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { useApp } from '../shared/context/AppContext'
 import { ITEMS, TOPICS, STATE } from './items'
 import { StatusBadge, StatusPicker } from './StatusBadge'
 import { Icon } from '../shared/components/SvgIcons'
+import { AccessibleDialog } from '../shared/components/AccessibleDialog'
 
 export default function ItemDetail() {
   const [searchParams] = useSearchParams()
   const itemId = searchParams.get('id') || ITEMS[0].id
 
-  const { state, updateItemStatus, toggleItemStep, setItemPriority, toast } = useApp()
+  const { state, updateItemStatus, toggleItemStep, setItemPriority } = useApp()
   const [lastCompletedStepIdx, setLastCompletedStepIdx] = useState(null)
+  const [pendingStatusSync, setPendingStatusSync] = useState(null) // { targetState, title, description, confirmLabel }
+  const syncCancelRef = useRef(null)
 
   const item = ITEMS.find((it) => it.id === itemId) || ITEMS[0]
   const currentItemState = state.items[item.id]?.state || 'notyet'
@@ -21,15 +24,54 @@ export default function ItemDetail() {
   const topicInfo = TOPICS.find((t) => t.id === item.topic)
 
   const handleStateChange = (newSt) => {
+    if (newSt === currentItemState) return
+
+    if (newSt === 'done' && doneStepsCount < item.steps.length) {
+      const remaining = item.steps.length - doneStepsCount
+      setPendingStatusSync({
+        targetState: 'done',
+        title: 'まだ終わっていない手順があります',
+        description: `全${item.steps.length}件の手順のうち、${remaining}件にまだチェックが入っていません。すべての手順も「完了」に揃えて切り替えますか？`,
+        confirmLabel: 'すべての手順も完了にする'
+      })
+      return
+    }
+
+    if (newSt === 'notyet' && doneStepsCount > 0) {
+      setPendingStatusSync({
+        targetState: 'notyet',
+        title: 'チェック済みの手順を未着手に戻しますか？',
+        description: `チェックが入っている${doneStepsCount}件の手順をすべて外して、「未着手」に揃えます。よろしいですか？`,
+        confirmLabel: 'チェックを外して未着手にする'
+      })
+      return
+    }
+
+    if (newSt === 'doing' && doneStepsCount === item.steps.length) {
+      setPendingStatusSync({
+        targetState: 'doing',
+        title: 'すべての手順が完了しています',
+        description: '「準備中」に切り替えるため、最後の手順のチェックを外して状態を揃えます。よろしいですか？',
+        confirmLabel: '最後の手順を外して準備中にする'
+      })
+      return
+    }
+
     setLastCompletedStepIdx(null)
-    updateItemStatus(item.id, newSt)
+    updateItemStatus(item.id, newSt, { syncSteps: true })
+  }
+
+  const handleConfirmStatusSync = () => {
+    if (!pendingStatusSync) return
+    setLastCompletedStepIdx(null)
+    updateItemStatus(item.id, pendingStatusSync.targetState, { syncSteps: true })
+    setPendingStatusSync(null)
   }
 
   const handleCompleteFirstStep = (index) => {
     const ok = toggleItemStep(item.id, index)
     if (ok) {
       setLastCompletedStepIdx(index)
-      toast(`手順 ${index + 1} を完了にしました`)
     }
   }
 
@@ -37,7 +79,6 @@ export default function ItemDetail() {
     if (lastCompletedStepIdx === null) return
     const ok = toggleItemStep(item.id, lastCompletedStepIdx)
     if (ok) {
-      toast(`手順 ${lastCompletedStepIdx + 1} を完了前に戻しました`)
       setLastCompletedStepIdx(null)
     }
   }
@@ -69,6 +110,9 @@ export default function ItemDetail() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '.88rem', color: 'var(--muted)' }}>現在の状態:</span>
             <StatusBadge state={currentItemState} />
+            <span style={{ fontSize: '.84rem', color: 'var(--muted)', fontWeight: 700 }}>
+              （手順 {doneStepsCount} / {item.steps.length}）
+            </span>
           </div>
 
           {!isPriority && currentItemState !== 'done' && (
@@ -85,10 +129,10 @@ export default function ItemDetail() {
 
       {/* 誤操作時の取り消し導線（直前に手順を完了にした場合のみ表示） */}
       {lastCompletedStepIdx !== null && currentItemDone[lastCompletedStepIdx] && (
-        <div className="notice notice-blue" style={{ marginTop: '.9rem' }} role="status">
+        <div className="notice notice-blue" style={{ marginTop: '.9rem' }}>
           <div className="n-body">
             <p className="n-title" style={{ fontSize: '.96rem' }}>
-              手順 {lastCompletedStepIdx + 1} を完了にしました
+              手順 {lastCompletedStepIdx + 1} を完了にしました（取り消しできます）
             </p>
             <div style={{ marginTop: '.45rem' }}>
               <button
@@ -149,7 +193,7 @@ export default function ItemDetail() {
         </summary>
         <div className="acc-body">
           <p className="card-sub">
-            押すと進み具合が自動で記録されます（もう一度押すと元に戻せます）。
+            押すと進み具合が自動で記録されます（もう一度押すとチェックを外して状態も戻ります）。
           </p>
           <div style={{ marginTop: '.5rem' }}>
             {item.steps.map((step, idx) => {
@@ -179,7 +223,7 @@ export default function ItemDetail() {
           状態を手動で切り替える（現在：{STATE[currentItemState]?.t}）
         </summary>
         <div className="acc-body">
-          <p className="card-sub">今の進み具合に合わせてお選びください。</p>
+          <p className="card-sub">今の進み具合に合わせてお選びください（手順チェックと連動します）。</p>
           <StatusPicker current={currentItemState} onChange={handleStateChange} />
         </div>
       </details>
@@ -225,6 +269,33 @@ export default function ItemDetail() {
           一覧にもどる
         </Link>
       </div>
+
+      {/* 手動状態切替とチェックリストの同期確認ダイアログ */}
+      <AccessibleDialog
+        isOpen={!!pendingStatusSync}
+        onClose={() => setPendingStatusSync(null)}
+        title={pendingStatusSync?.title || ''}
+        description={pendingStatusSync?.description}
+        initialFocusRef={syncCancelRef}
+      >
+        <div className="btn-row" style={{ marginTop: '1.2rem' }}>
+          <button
+            ref={syncCancelRef}
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => setPendingStatusSync(null)}
+          >
+            キャンセル
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleConfirmStatusSync}
+          >
+            {pendingStatusSync?.confirmLabel || '切り替える'}
+          </button>
+        </div>
+      </AccessibleDialog>
     </div>
   )
 }

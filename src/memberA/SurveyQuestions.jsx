@@ -2,9 +2,16 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../shared/context/AppContext'
 import { QUIZ_NODES } from '../memberC/questions'
-import { computeQuizFlow, pruneAnswersToFlow } from '../memberC/rules'
+import {
+  computeQuizFlow,
+  computeQuizProgress,
+  findOrphanedAnswerIds,
+  pruneAnswersToFlow,
+  resolveAnswerOption
+} from '../memberC/rules'
 import { QuizProgressBar } from '../shared/components/ProgressBar'
 import { Icon } from '../shared/components/SvgIcons'
+import { AccessibleDialog } from '../shared/components/AccessibleDialog'
 
 export default function SurveyQuestions() {
   const navigate = useNavigate()
@@ -19,13 +26,19 @@ export default function SurveyQuestions() {
     return firstUnanswered >= 0 ? firstUnanswered : 0
   })
 
+  // 分岐変更で流れから外れた回答の消去確認ダイアログ
+  const [orphanDialogOpen, setOrphanDialogOpen] = useState(false)
+  const [orphanList, setOrphanList] = useState([])
+  const [pendingAction, setPendingAction] = useState(null) // 'next' | 'preview'
+  const [acknowledgedOrphansSig, setAcknowledgedOrphansSig] = useState('')
+  const keepOrphanBtnRef = useRef(null)
+
   const questionHeadingRef = useRef(null)
   const hasMountedRef = useRef(false)
 
   const curQId = flow[curIdx]
   const node = curQId ? QUIZ_NODES[curQId] : null
 
-  // 質問が切り替わったときに質問文へフォーカスを移動し、読み上げ中なら止める
   useEffect(() => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel()
@@ -40,7 +53,6 @@ export default function SurveyQuestions() {
     }
   }, [curQId])
 
-  // 音声読み上げ
   const handleToggleSpeak = () => {
     if (!('speechSynthesis' in window)) {
       toast('お使いのブラウザは音声読み上げに対応していません')
@@ -68,7 +80,6 @@ export default function SurveyQuestions() {
     toast('質問と選択肢を読み上げています')
   }
 
-  // 画面離脱時に読み上げを止める
   useEffect(() => {
     return () => {
       if ('speechSynthesis' in window) {
@@ -93,27 +104,29 @@ export default function SurveyQuestions() {
     )
   }
 
-  const selectedOpt = answers[curQId]
+  const selectedOptObj = resolveAnswerOption(curQId, answers[curQId])
+  const selectedValue = selectedOptObj?.value
   const isLastQuestion = curIdx + 1 >= flow.length
-  const answeredCount = flow.filter((qId) => answers[qId] !== undefined).length
+  const progressInfo = computeQuizProgress(answers, flow)
 
-  // 誤タップ防止：選択肢タップ時は選択状態の記録と分岐更新のみ行い、自動では進まない
-  const handleSelectOption = (optIdx) => {
-    const mergedAnswers = { ...answers, [curQId]: optIdx }
-    const { flow: nextFlow, answers: cleanedAnswers } = pruneAnswersToFlow(mergedAnswers)
+  // 選択肢タップ：明示的な value を保存し、分岐変化があっても既存回答は勝手に削除しない
+  const handleSelectOption = (optValue) => {
+    const mergedAnswers = { ...answers, [curQId]: optValue }
+    const nextFlow = computeQuizFlow(mergedAnswers)
 
-    setAnswers(cleanedAnswers)
+    setAnswers(mergedAnswers)
     setFlow(nextFlow)
-    saveQuizProgress(cleanedAnswers)
+    saveQuizProgress(mergedAnswers)
   }
 
-  // 「次の質問へ」または「完了して結果を見る」
-  const handleNext = () => {
-    if (selectedOpt === undefined) {
-      toast('上の選択肢からひとつお選びください')
+  const executeAdvance = (targetAnswers, actionType) => {
+    if (actionType === 'preview') {
+      previewPartialQuiz(targetAnswers)
+      navigate('/survey/result')
       return
     }
-    const { flow: nextFlow, answers: cleanedAnswers } = pruneAnswersToFlow(answers)
+
+    const nextFlow = computeQuizFlow(targetAnswers)
     const currentPos = nextFlow.indexOf(curQId)
     const nextIdx = currentPos >= 0 ? currentPos + 1 : curIdx + 1
 
@@ -122,9 +135,49 @@ export default function SurveyQuestions() {
       setCurIdx(nextIdx)
       window.scrollTo(0, 0)
     } else {
-      finishQuiz(cleanedAnswers)
+      finishQuiz(targetAnswers)
       navigate('/survey/result')
     }
+  }
+
+  const checkOrphansAndProceed = (actionType) => {
+    const orphans = findOrphanedAnswerIds(answers)
+    const sig = orphans.slice().sort().join(',')
+    if (orphans.length > 0 && sig !== acknowledgedOrphansSig) {
+      setOrphanList(orphans)
+      setPendingAction(actionType)
+      setOrphanDialogOpen(true)
+      return
+    }
+    executeAdvance(answers, actionType)
+  }
+
+  const handleNext = () => {
+    if (!selectedValue) {
+      toast('上の選択肢からひとつお選びください')
+      return
+    }
+    checkOrphansAndProceed('next')
+  }
+
+  const handlePreviewPartial = () => {
+    checkOrphansAndProceed('preview')
+  }
+
+  const handlePruneOrphansAndProceed = () => {
+    const { answers: pruned } = pruneAnswersToFlow(answers)
+    setAnswers(pruned)
+    setOrphanDialogOpen(false)
+    setAcknowledgedOrphansSig('')
+    saveQuizProgress(pruned)
+    executeAdvance(pruned, pendingAction || 'next')
+  }
+
+  const handleKeepOrphansAndProceed = () => {
+    const sig = orphanList.slice().sort().join(',')
+    setAcknowledgedOrphansSig(sig)
+    setOrphanDialogOpen(false)
+    executeAdvance(answers, pendingAction || 'next')
   }
 
   const handlePrev = () => {
@@ -137,30 +190,24 @@ export default function SurveyQuestions() {
   }
 
   const handlePauseAndSave = () => {
-    const { answers: cleanedAnswers } = pruneAnswersToFlow(answers)
-    const ok = saveQuizProgress(cleanedAnswers)
-    if (ok) {
-      toast('途中まで保存しました。「続きから答える」で再開できます')
-    }
+    saveQuizProgress(answers, '途中まで保存しました。「続きから答える」で再開できます')
     navigate('/survey')
   }
 
-  const handlePreviewPartial = () => {
-    const { answers: cleanedAnswers } = pruneAnswersToFlow(answers)
-    previewPartialQuiz(cleanedAnswers)
-    navigate('/survey/result')
-  }
+  const orphanNamesText = orphanList
+    .map((id) => QUIZ_NODES[id]?.label || id)
+    .join('、')
 
   return (
     <div className="screen-anim">
-      {/* 上部進捗バー */}
+      {/* 上部進捗バー（分岐で割合が下がらない計算） */}
       <QuizProgressBar
         current={curIdx + 1}
         total={flow.length}
-        answeredCount={answeredCount}
+        pct={progressInfo.pct}
       />
       <p className="note" style={{ marginTop: '-.4rem', marginBottom: '.7rem', fontSize: '.82rem' }}>
-        ※ お答えに合わせて質問数が変わります（選んでから下の「{isLastQuestion ? '結果を見る' : '次の質問へ'}」を押してください）
+        ※ お答えに合わせて質問数が変わります（選んでから下の「{isLastQuestion ? '結果を見る' : '次の質問へ進む'}」を押してください）
       </p>
 
       {/* 質問カード */}
@@ -203,17 +250,17 @@ export default function SurveyQuestions() {
           {node.text}
         </h2>
 
-        {/* 選択肢 */}
+        {/* 選択肢（valueベースで選択状態を管理） */}
         <div style={{ marginTop: '.8rem' }} role="group" aria-label={node.text}>
-          {node.opts.map((opt, idx) => {
-            const isSelected = selectedOpt === idx
+          {node.opts.map((opt) => {
+            const isSelected = selectedValue === opt.value
             return (
               <button
-                key={idx}
+                key={opt.value}
                 type="button"
                 className={`opt ${isSelected ? 'on' : ''}`}
                 aria-pressed={isSelected}
-                onClick={() => handleSelectOption(idx)}
+                onClick={() => handleSelectOption(opt.value)}
               >
                 <span className="mk" aria-hidden="true">
                   {isSelected ? '✓' : ''}
@@ -229,10 +276,10 @@ export default function SurveyQuestions() {
           <button
             type="button"
             className="btn btn-primary btn-block"
-            disabled={selectedOpt === undefined}
+            disabled={!selectedValue}
             onClick={handleNext}
           >
-            {selectedOpt === undefined
+            {!selectedValue
               ? '上の選択肢からひとつお選びください'
               : isLastQuestion
                 ? '回答を完了して結果を見る'
@@ -260,17 +307,51 @@ export default function SurveyQuestions() {
         </button>
       </div>
 
-      {answeredCount > 0 && (
+      {progressInfo.answeredCount > 0 && (
         <div style={{ textAlign: 'center', marginTop: '.75rem' }}>
           <button
             type="button"
             className="btn btn-ghost btn-small"
             onClick={handlePreviewPartial}
           >
-            ここまでの答えで仮の結果を見る（{answeredCount}問回答済み）
+            ここまでの答えで仮の結果を見る（{progressInfo.answeredCount}問回答済み）
           </button>
         </div>
       )}
+
+      {/* 分岐変更で流れから外れた回答の取り扱い確認ダイアログ */}
+      <AccessibleDialog
+        isOpen={orphanDialogOpen}
+        onClose={() => setOrphanDialogOpen(false)}
+        title="前の回答の変更により、使われないお答えがあります"
+        description={`前の質問の選び直しにより、「${orphanNamesText}」へのお答えは現在の流れでは使われなくなりました。このお答えを整理（削除）してから進みますか？`}
+        initialFocusRef={keepOrphanBtnRef}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '.55rem', marginTop: '1.1rem' }}>
+          <button
+            type="button"
+            className="btn btn-primary btn-block"
+            onClick={handlePruneOrphansAndProceed}
+          >
+            不要になったお答えを削除して進む
+          </button>
+          <button
+            ref={keepOrphanBtnRef}
+            type="button"
+            className="btn btn-ghost btn-block"
+            onClick={handleKeepOrphansAndProceed}
+          >
+            お答えを残したまま進む
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost btn-small"
+            onClick={() => setOrphanDialogOpen(false)}
+          >
+            もどって選び直す
+          </button>
+        </div>
+      </AccessibleDialog>
     </div>
   )
 }

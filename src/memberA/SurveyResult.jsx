@@ -2,16 +2,17 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { useApp } from '../shared/context/AppContext'
 import { ITEMS } from '../memberB/items'
+import { computeAnalysisFromAnswers, pickPriorityItem } from '../memberC/rules'
 import { StatusBadge } from '../memberB/StatusBadge'
 import { Icon } from '../shared/components/SvgIcons'
 
 export default function SurveyResult() {
   const { state, getQuizStatus, setItemPriority } = useApp()
 
-  const analysis = state.analysis
   const quizStatus = getQuizStatus()
+  const hasSurveyOutput = state.quizDone || state.quizPreview || !!state.analysis
 
-  if (!analysis) {
+  if (!hasSurveyOutput) {
     return (
       <div className="screen-anim">
         <div className="empty">
@@ -27,20 +28,33 @@ export default function SurveyResult() {
     )
   }
 
-  // 提案項目リストの組み立て
-  const newlyItems = (analysis.newly || []).map((n) => {
+  // 最新の項目状態とルールを使って常に再計算する
+  const analysis =
+    Object.keys(state.quizAnswers || {}).length > 0
+      ? computeAnalysisFromAnswers(state.quizAnswers, state.items, { isPartial: !state.quizDone })
+      : state.analysis
+
+  const newlyItems = (analysis?.newly || []).map((n) => {
     const item = ITEMS.find((it) => it.id === n.id)
     return { ...n, item }
   }).filter((n) => !!n.item)
 
-  const knownItems = (analysis.known || []).map((k) => {
+  const knownItems = (analysis?.known || []).map((k) => {
     const item = ITEMS.find((it) => it.id === k.id)
     return { ...k, item }
   }).filter((k) => !!k.item)
 
-  const topPick = newlyItems.length > 0
-    ? newlyItems[0]
-    : (ITEMS[0] ? { id: ITEMS[0].id, item: ITEMS[0], reason: '基本となる準備から始めましょう' } : null)
+  const neutralItems = (analysis?.neutral || []).map((neu) => {
+    const item = ITEMS.find((it) => it.id === neu.id)
+    return { ...neu, item }
+  }).filter((neu) => !!neu.item)
+
+  const unconfirmedItems = (analysis?.unconfirmed || []).map((id) =>
+    ITEMS.find((it) => it.id === id)
+  ).filter(Boolean)
+
+  // おすすめ項目が未完なら最優先、すべて完了済みなら別の未完了項目を選ぶ
+  const topPick = pickPriorityItem(analysis, state.items, state.priority)
 
   const handleSetPriority = (id) => {
     setItemPriority(id)
@@ -76,14 +90,14 @@ export default function SurveyResult() {
           <div className="n-body">
             <h2 className="n-title">アンケートの結果</h2>
             <p className="n-sub">
-              お答えいただいた内容をもとに、まず確認をおすすめする項目をまとめました。
+              お答えいただいた内容をもとに、いまの確認状況と次に取り組める項目をまとめました。
             </p>
           </div>
         </div>
       )}
 
-      {/* 最初におすすめする次の一歩 */}
-      {topPick && topPick.item && (
+      {/* 最初におすすめする次の一歩（全項目完了時はお祝い表示） */}
+      {topPick && topPick.item ? (
         <section className="hero" style={{ marginTop: '1rem' }}>
           <div className="h-eyebrow">
             <Icon name="star" style={{ width: '1rem', height: '1rem' }} /> まず取り組みたいこと
@@ -111,13 +125,27 @@ export default function SurveyResult() {
             </button>
           </div>
         </section>
+      ) : (
+        <section className="celebrate" style={{ marginTop: '1rem' }}>
+          <p style={{ fontWeight: 800, color: 'var(--brand-deep)', fontSize: '1.08rem' }}>
+            すべての準備項目（{ITEMS.length}項目）が完了しています
+          </p>
+          <p className="note" style={{ color: 'var(--body)', marginTop: '.25rem' }}>
+            どの項目も確認が終わっています。状況が変わったときは、一覧からいつでも見直せます。
+          </p>
+        </section>
       )}
 
       {/* 新しく見つかった準備 */}
       <h3 className="sec-title">確認をおすすめする項目（{newlyItems.length}件）</h3>
       {newlyItems.length === 0 ? (
-        <div className="empty">
-          お答えいただいた範囲では、新しく急いで確認が必要な項目はありません。
+        <div className="card" style={{ marginTop: '.6rem', background: 'var(--surface-2)' }}>
+          <p style={{ fontWeight: 700, color: 'var(--ink)' }}>
+            今回お答えいただいた範囲では、今すぐ新しく始める項目は見つかりませんでした。
+          </p>
+          <p className="note" style={{ marginTop: '.35rem' }}>
+            準備がすべて不要という意味ではありません。まだお答えいただいていない項目や、ご自身のペースで進めている項目も大切ですので、必要に応じて下の項目や「準備項目の一覧」からご確認ください。
+          </p>
         </div>
       ) : (
         newlyItems.map(({ item, reason }) => {
@@ -141,9 +169,73 @@ export default function SurveyResult() {
         })
       )}
 
+      {/* 中立的な状態の項目（今はひとりで整理したい等） */}
+      {neutralItems.length > 0 && (
+        <section className="card" style={{ marginTop: '1.1rem', borderColor: '#c4ddf0', background: '#f7fbfe' }}>
+          <h3 className="card-title" style={{ fontSize: '1rem' }}>
+            ご自身のペースで様子を見る項目（{neutralItems.length}件）
+          </h3>
+          <p className="card-sub">
+            いまは急いで対応せず、ご自身のタイミングで見直せる項目です（まだ完了扱いにはしていません）。
+          </p>
+          {neutralItems.map(({ item, reason }) => {
+            const itemState = state.items[item.id]?.state || 'notyet'
+            return (
+              <Link
+                key={item.id}
+                to={`/items/detail?id=${item.id}`}
+                className="rowitem"
+                style={{ marginTop: '.65rem' }}
+              >
+                <div className="r-main">
+                  <span className="r-title">{item.title}</span>
+                  <span className="r-sub">{reason}</span>
+                  <div style={{ marginTop: '.4rem' }}>
+                    <StatusBadge state={itemState} />
+                  </div>
+                </div>
+                <Icon name="chev" stroke className="chev" />
+              </Link>
+            )
+          })}
+        </section>
+      )}
+
+      {/* 未確認・スキップした項目 */}
+      {unconfirmedItems.length > 0 && (
+        <details className="acc" style={{ marginTop: '1rem' }}>
+          <summary>まだ確認していない・飛ばした項目を見る（{unconfirmedItems.length}件）</summary>
+          <div className="acc-body">
+            <p className="card-sub">
+              「答えたくない」「わからない」などで未確認のまま残っている項目です。気になるものがあればいつでも確認できます。
+            </p>
+            {unconfirmedItems.map((item) => {
+              const itemState = state.items[item.id]?.state || 'notyet'
+              return (
+                <Link
+                  key={item.id}
+                  to={`/items/detail?id=${item.id}`}
+                  className="rowitem"
+                  style={{ marginTop: '.65rem' }}
+                >
+                  <div className="r-main">
+                    <span className="r-title">{item.title}</span>
+                    <span className="r-sub">{item.desc}</span>
+                    <div style={{ marginTop: '.4rem' }}>
+                      <StatusBadge state={itemState} />
+                    </div>
+                  </div>
+                  <Icon name="chev" stroke className="chev" />
+                </Link>
+              )
+            })}
+          </div>
+        </details>
+      )}
+
       {/* すでに把握・対応できている項目 */}
       {knownItems.length > 0 && (
-        <details className="acc" style={{ marginTop: '1.2rem' }}>
+        <details className="acc" style={{ marginTop: '1rem' }}>
           <summary>すでに整理できている・進めている項目（{knownItems.length}件）</summary>
           <div className="acc-body">
             {knownItems.map(({ item, reason }) => {

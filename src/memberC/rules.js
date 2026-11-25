@@ -1,65 +1,75 @@
-import { ITEMS } from '../memberB/items'
-import { QUIZ_NODES } from './questions'
+import { ITEMS } from '../memberB/items.js'
+import { BASE_QUIZ_SEQUENCE, QUIZ_NODES } from './questions.js'
+
+export const RULES_VERSION = '2026-11-25-v2'
 
 export const QUIZ_FLOW_RANGE = {
-  min: 9,
-  max: 15
+  min: BASE_QUIZ_SEQUENCE.length,
+  max: 16
 }
 
-/* ---------- アンケートフロー構築（回答に応じた分岐フロー） ---------- */
+/**
+ * 選択肢の値（文字列value、または旧データの数値インデックス）から該当選択肢オブジェクトを解決する
+ */
+export function resolveAnswerOption(qId, answerValue) {
+  const node = QUIZ_NODES[qId]
+  if (!node || answerValue === undefined || answerValue === null) return null
+  if (typeof answerValue === 'string') {
+    return node.opts.find((opt) => opt.value === answerValue) || null
+  }
+  if (typeof answerValue === 'number') {
+    return node.opts[answerValue] || null
+  }
+  return null
+}
+
+/**
+ * 旧バージョンの数値インデックス回答を、選択肢の並び替えに依存しない明示的な value 文字列へ変換する
+ */
+export function migrateQuizAnswers(rawAnswers = {}) {
+  const migrated = {}
+  if (!rawAnswers || typeof rawAnswers !== 'object') return migrated
+
+  Object.keys(rawAnswers).forEach((qId) => {
+    const val = rawAnswers[qId]
+    const opt = resolveAnswerOption(qId, val)
+    if (opt && opt.value) {
+      migrated[qId] = opt.value
+    } else if (typeof val === 'string') {
+      migrated[qId] = val
+    }
+  })
+
+  return migrated
+}
+
+/* ---------- アンケートフロー構築（明示的な value と next による分岐フロー） ---------- */
 export function computeQuizFlow(answers = {}) {
   const flow = []
 
-  // 1. お金・通帳
-  flow.push('q_money_1')
-  if (answers.q_money_1 !== undefined && answers.q_money_1 !== 0 && answers.q_money_1 !== 4) {
-    flow.push('q_money_2')
-  }
-
-  // 2. 保険・年金
-  flow.push('q_insurance_1')
-
-  // 3. スマホ・ネット契約（利用している場合にくわしい質問へ分岐）
-  flow.push('q_digital_1')
-  if (answers.q_digital_1 === 0) {
-    flow.push('q_digital_2')
-  }
-
-  // 4. 医療・介護
-  flow.push('q_medical_1')
-  if (answers.q_medical_1 === 1 || answers.q_medical_1 === 2) {
-    flow.push('q_medical_2')
-  }
-
-  // 5. 住まい（持ち家・賃貸で分岐）
-  flow.push('q_house_type')
-  if (answers.q_house_type === 0) {
-    flow.push('q_house_own')
-  } else if (answers.q_house_type === 1) {
-    flow.push('q_house_rent')
-  }
-
-  // 6. お墓・葬儀
-  flow.push('q_grave_1')
-  if (answers.q_grave_1 === 1 || answers.q_grave_1 === 2) {
-    flow.push('q_grave_2')
-  }
-
-  // 7. 家族に伝えること（終活ノートと家族との話し合いの2項目）
-  flow.push('q_family_1')
-  flow.push('q_family_2')
-
-  // 8. ペットの終活
-  flow.push('q_pet_1')
-  if (answers.q_pet_1 === 1) {
-    flow.push('q_pet_2')
-  }
+  BASE_QUIZ_SEQUENCE.forEach((rootId) => {
+    flow.push(rootId)
+    const selectedOpt = resolveAnswerOption(rootId, answers[rootId])
+    if (selectedOpt?.next && QUIZ_NODES[selectedOpt.next]) {
+      flow.push(selectedOpt.next)
+    }
+  })
 
   return flow
 }
 
 /**
- * 現在の分岐フローに含まれる質問の回答だけを残す
+ * 現在の分岐フローには含まれないが、過去の選択で保存されている回答IDを返す
+ */
+export function findOrphanedAnswerIds(answers = {}) {
+  const flowSet = new Set(computeQuizFlow(answers))
+  return Object.keys(answers).filter(
+    (qId) => answers[qId] !== undefined && !flowSet.has(qId) && !!QUIZ_NODES[qId]
+  )
+}
+
+/**
+ * 現在の分岐フローに含まれる質問の回答だけを残す（明示的に利用者が整理を選んだとき用）
  */
 export function pruneAnswersToFlow(answers = {}) {
   const flow = computeQuizFlow(answers)
@@ -72,18 +82,48 @@ export function pruneAnswersToFlow(answers = {}) {
   return { flow, answers: pruned }
 }
 
-/* ---------- ルールベース回答分析（対応表照合） ---------- */
+/**
+ * 分岐による質問数の増減で進捗率が下がらないよう、
+ * 9つの基本質問グループ単位で完了度を計算する単調増加の進捗率
+ */
+export function computeQuizProgress(answers = {}, flowOverride = null) {
+  const flow = flowOverride || computeQuizFlow(answers)
+  const flowSet = new Set(flow)
+
+  let progressSum = 0
+  BASE_QUIZ_SEQUENCE.forEach((rootId) => {
+    const groupNodes = [rootId]
+    const selectedOpt = resolveAnswerOption(rootId, answers[rootId])
+    if (selectedOpt?.next && flowSet.has(selectedOpt.next)) {
+      groupNodes.push(selectedOpt.next)
+    }
+    const answeredInGroup = groupNodes.filter((id) => answers[id] !== undefined).length
+    progressSum += answeredInGroup / groupNodes.length
+  })
+
+  const totalGroups = BASE_QUIZ_SEQUENCE.length
+  const pct = totalGroups > 0 ? Math.min(100, Math.round((progressSum / totalGroups) * 100)) : 0
+  const answeredInFlow = flow.filter((qId) => answers[qId] !== undefined).length
+
+  return {
+    pct,
+    answeredCount: answeredInFlow,
+    totalCount: flow.length
+  }
+}
+
+/* ---------- ルールベース回答分析（対応表照合・中立状態対応） ---------- */
 export function computeAnalysisFromAnswers(answers = {}, itemsMap = {}, options = {}) {
-  const { answers: validAnswers, flow } = pruneAnswersToFlow(answers)
+  const flow = computeQuizFlow(answers)
   const newly = []      // {id, reason}
   const known = []      // {id, reason}
+  const neutral = []    // {id, reason}
   const naSuggest = []  // {id, reason}
   const suggestMap = {}
+  const neutralMap = {}
 
-  Object.keys(validAnswers).forEach((qId) => {
-    const node = QUIZ_NODES[qId]
-    if (!node) return
-    const opt = node.opts[validAnswers[qId]]
+  flow.forEach((qId) => {
+    const opt = resolveAnswerOption(qId, answers[qId])
     if (!opt) return
 
     if (opt.suggest) {
@@ -96,16 +136,31 @@ export function computeAnalysisFromAnswers(answers = {}, itemsMap = {}, options 
         }
       })
     }
+    if (opt.neutral) {
+      opt.neutral.forEach((itemId) => {
+        if (!suggestMap[itemId]) {
+          neutralMap[itemId] = {
+            id: itemId,
+            reason: opt.reason || "いまはご自身のペースで様子を見る項目です。"
+          }
+        }
+      })
+    }
     if (opt.naCandidate) {
       naSuggest.push({ id: opt.naCandidate, reason: opt.reason })
     }
   })
 
-  // 重複除去しつつ newly と known を整理
+  // 重複除去しつつ newly / known / neutral を整理
   const knownIds = {}
-  known.forEach((k) => { knownIds[k.id] = k })
+  known.forEach((k) => {
+    if (!neutralMap[k.id]) {
+      knownIds[k.id] = k
+    }
+  })
 
   Object.keys(suggestMap).forEach((id) => {
+    delete neutralMap[id]
     const st = (itemsMap[id] && itemsMap[id].state) || "notyet"
     if (st === "done") {
       knownIds[id] = { id, reason: "すでに対策が完了しています。" }
@@ -117,14 +172,27 @@ export function computeAnalysisFromAnswers(answers = {}, itemsMap = {}, options 
     }
   })
 
+  // 中立項目でも、すでに手順が進んでいる・完了している場合は実際の状態を優先する
+  Object.keys(neutralMap).forEach((id) => {
+    const st = (itemsMap[id] && itemsMap[id].state) || "notyet"
+    if (st === "done") {
+      knownIds[id] = { id, reason: "すでに対策が完了しています。" }
+    } else if (st === "doing") {
+      knownIds[id] = { id, reason: `${neutralMap[id].reason}（現在進行中です）` }
+    } else if (!knownIds[id]) {
+      neutral.push(neutralMap[id])
+    }
+  })
+
   // 未回答・スキップの項目は状況に応じて整理
   const unconfirmed = []
   ITEMS.forEach((it) => {
     const isNewly = newly.some((n) => n.id === it.id)
     const isKnown = !!knownIds[it.id]
+    const isNeutral = neutral.some((n) => n.id === it.id)
     const isNaSug = naSuggest.some((n) => n.id === it.id)
     const st = (itemsMap[it.id] && itemsMap[it.id].state) || "notyet"
-    if (!isNewly && !isKnown && !isNaSug) {
+    if (!isNewly && !isKnown && !isNeutral && !isNaSug) {
       if (st === "done" || st === "doing") {
         knownIds[it.id] = { id: it.id, reason: "以前からご自身で状況を登録済みです。" }
       } else {
@@ -134,12 +202,55 @@ export function computeAnalysisFromAnswers(answers = {}, itemsMap = {}, options 
   })
 
   return {
+    rulesVersion: RULES_VERSION,
     newly,
     known: Object.values(knownIds),
+    neutral,
     naSuggest,
     unconfirmed,
-    totalAnswered: Object.keys(validAnswers).length,
+    totalAnswered: flow.filter((qId) => answers[qId] !== undefined).length,
     totalQuestions: flow.length,
     isPartial: !!options.isPartial
   }
+}
+
+/**
+ * おすすめ項目から未完のものを最優先で選び、
+ * すべて完了済みの場合は別の未完了項目を選ぶ（全項目完了時は null）
+ */
+export function pickPriorityItem(analysis, itemsMap = {}, fallbackPriorityId = null) {
+  const newly = analysis?.newly || []
+
+  for (const entry of newly) {
+    const item = ITEMS.find((it) => it.id === entry.id)
+    if (!item) continue
+    const st = itemsMap[item.id]?.state || 'notyet'
+    if (st !== 'done') {
+      return { id: item.id, item, reason: entry.reason, fromSurvey: true }
+    }
+  }
+
+  if (fallbackPriorityId) {
+    const fbItem = ITEMS.find((it) => it.id === fallbackPriorityId)
+    if (fbItem && (itemsMap[fbItem.id]?.state || 'notyet') !== 'done') {
+      return {
+        id: fbItem.id,
+        item: fbItem,
+        reason: 'まだ完了していない項目の中から、次に取り組みやすい準備を選びました。',
+        fromSurvey: false
+      }
+    }
+  }
+
+  const nextUnfinished = ITEMS.find((it) => (itemsMap[it.id]?.state || 'notyet') !== 'done')
+  if (nextUnfinished) {
+    return {
+      id: nextUnfinished.id,
+      item: nextUnfinished,
+      reason: 'まだ完了していない項目の中から、次に進められる準備を選びました。',
+      fromSurvey: false
+    }
+  }
+
+  return null
 }

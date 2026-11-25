@@ -17,16 +17,16 @@ export function ProgressBar({ pct = 0, label, showPct = true }) {
   )
 }
 
-export function QuizProgressBar({ current, total, answeredCount = 0 }) {
-  const pct = total > 0 ? Math.min(100, Math.round((answeredCount / total) * 100)) : 0
+export function QuizProgressBar({ current, total, pct = 0 }) {
+  const safePct = Math.min(100, Math.max(0, pct))
   return (
     <div style={{ margin: '.4rem 0 .8rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '.5rem', flexWrap: 'wrap' }}>
         <span className="q-label">質問 {current} / {total}</span>
-        <span className="q-label" style={{ fontWeight: 700 }}>{pct}%</span>
+        <span className="q-label" style={{ fontWeight: 700 }}>進み具合 {safePct}%</span>
       </div>
       <div className="q-progress">
-        <i style={{ width: `${pct}%` }} />
+        <i style={{ width: `${safePct}%` }} />
       </div>
     </div>
   )
