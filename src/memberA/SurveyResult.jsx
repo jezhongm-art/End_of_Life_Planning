@@ -1,29 +1,47 @@
 import React from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useApp } from '../shared/context/AppContext'
 import { ITEMS } from '../memberB/items'
 import { StatusBadge } from '../memberB/StatusBadge'
 import { Icon } from '../shared/components/SvgIcons'
 
 export default function SurveyResult() {
-  const navigate = useNavigate()
-  const { state, setItemPriority, toast } = useApp()
+  const { state, getQuizStatus, setItemPriority } = useApp()
 
   const analysis = state.analysis
+  const quizStatus = getQuizStatus()
+
+  if (!analysis) {
+    return (
+      <div className="screen-anim">
+        <div className="empty">
+          まだアンケートの回答がありません。<br />
+          質問に答えると、ご状況に合わせた準備項目をご案内します。
+        </div>
+        <div className="btn-row" style={{ marginTop: '1rem' }}>
+          <Link to="/survey" className="btn btn-primary btn-block">
+            アンケートを開始する
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   // 提案項目リストの組み立て
-  const newlyItems = (analysis?.newly || []).map((n) => {
+  const newlyItems = (analysis.newly || []).map((n) => {
     const item = ITEMS.find((it) => it.id === n.id)
     return { ...n, item }
   }).filter((n) => !!n.item)
 
-  const knownItems = (analysis?.known || []).map((k) => {
+  const knownItems = (analysis.known || []).map((k) => {
     const item = ITEMS.find((it) => it.id === k.id)
     return { ...k, item }
   }).filter((k) => !!k.item)
 
   // おすすめの次の一歩（新しく見つかったものから1つ、なければ優先項目）
-  const topPick = newlyItems.length > 0 ? newlyItems[0] : (ITEMS[0] ? { id: ITEMS[0].id, item: ITEMS[0], reason: '基本となる準備から始めましょう' } : null)
+  const topPick = newlyItems.length > 0
+    ? newlyItems[0]
+    : (ITEMS[0] ? { id: ITEMS[0].id, item: ITEMS[0], reason: '基本となる準備から始めましょう' } : null)
 
   const handleSetPriority = (id) => {
     setItemPriority(id)
@@ -31,18 +49,39 @@ export default function SurveyResult() {
 
   return (
     <div className="screen-anim">
-      {/* 完了バナー */}
-      <div className="notice notice-teal">
-        <div className="n-ic">
-          <Icon name="check" stroke />
+      {/* 途中結果か完了結果かのバナー */}
+      {!state.quizDone ? (
+        <div className="notice notice-amber">
+          <div className="n-ic">
+            <Icon name="bulb" />
+          </div>
+          <div className="n-body">
+            <h2 className="n-title">
+              途中の回答による仮の結果（{quizStatus.answeredCount} / {quizStatus.totalCount} 問）
+            </h2>
+            <p className="n-sub">
+              まだ最後まで回答が完了していません。残りの質問に答えると、より正確な提案になります。
+            </p>
+            <div style={{ marginTop: '.65rem' }}>
+              <Link to="/survey/q" className="btn btn-amber btn-small">
+                続きから答える（残り{quizStatus.remainingCount}問）
+              </Link>
+            </div>
+          </div>
         </div>
-        <div className="n-body">
-          <h2 className="n-title">アンケート集計結果</h2>
-          <p className="n-sub">
-            ご回答内容にもとづき、優先して確認が必要な項目をまとめました。
-          </p>
+      ) : (
+        <div className="notice notice-teal">
+          <div className="n-ic">
+            <Icon name="check" stroke />
+          </div>
+          <div className="n-body">
+            <h2 className="n-title">アンケート集計結果</h2>
+            <p className="n-sub">
+              ご回答内容にもとづき、優先して確認が必要な項目をまとめました。
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 最初におすすめする次の一歩 */}
       {topPick && topPick.item && (
@@ -69,7 +108,7 @@ export default function SurveyResult() {
               className="btn btn-ghost"
               onClick={() => handleSetPriority(topPick.item.id)}
             >
-              次の取り組みに設定
+              次にすることに設定
             </button>
           </div>
         </section>
@@ -105,42 +144,43 @@ export default function SurveyResult() {
 
       {/* すでに把握・対応できている項目 */}
       {knownItems.length > 0 && (
-        <>
-          <h3 className="sec-title" style={{ marginTop: '1.4rem' }}>
-            把握済みの項目（{knownItems.length}件）
-          </h3>
-          {knownItems.map(({ item, reason }) => {
-            const itemState = state.items[item.id]?.state || 'notyet'
-            return (
-              <div key={item.id} className="card" style={{ marginTop: '.65rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontWeight: 800 }}>{item.title}</span>
-                  <StatusBadge state={itemState} />
+        <details className="acc" style={{ marginTop: '1.2rem' }}>
+          <summary>すでに把握・進行中の項目を見る（{knownItems.length}件）</summary>
+          <div className="acc-body">
+            {knownItems.map(({ item, reason }) => {
+              const itemState = state.items[item.id]?.state || 'notyet'
+              return (
+                <div key={item.id} className="card" style={{ marginTop: '.65rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '.5rem', flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: 800 }}>{item.title}</span>
+                    <StatusBadge state={itemState} />
+                  </div>
+                  <p className="note" style={{ marginTop: '.3rem' }}>{reason}</p>
                 </div>
-                <p className="note" style={{ marginTop: '.3rem' }}>{reason}</p>
-              </div>
-            )
-          })}
-        </>
+              )
+            })}
+          </div>
+        </details>
       )}
 
       {/* 家族に伝えるまとめカード */}
-      <section className="card" style={{ marginTop: '1.4rem' }}>
-        <h3 className="card-title">家族への相談用メモ</h3>
-        <p className="card-sub">
-          家族に相談するとき、そのまま伝えられる文面の例です。
-        </p>
-
-        <div className="qbubble" style={{ marginTop: '.7rem' }}>
-          「終活みちしるべで確認したところ、まずは『
-          {topPick?.item?.title || '準備項目'}』から整理を始めようと思っています。
-          {newlyItems.length > 0 && `あわせて${newlyItems.map((n) => n.item.title).join('、')}も確認していく予定です。`}
-          無理のないペースで進めるので、相談に乗ってくれると助かります。」
+      <details className="acc" style={{ marginTop: '1rem' }}>
+        <summary>家族に相談するときの伝え方例を見る</summary>
+        <div className="acc-body">
+          <p className="card-sub">
+            家族に相談するとき、そのまま伝えられる文面の例です。
+          </p>
+          <div className="qbubble" style={{ marginTop: '.7rem' }}>
+            「終活みちしるべで確認したところ、まずは『
+            {topPick?.item?.title || '準備項目'}』から整理を始めようと思っています。
+            {newlyItems.length > 0 && `あわせて${newlyItems.map((n) => n.item.title).join('、')}も確認していく予定です。`}
+            無理のないペースで進めるので、相談に乗ってくれると助かります。」
+          </div>
         </div>
-      </section>
+      </details>
 
       {/* アクションボタン */}
-      <div className="btn-row" style={{ marginTop: '1.4rem' }}>
+      <div className="btn-row" style={{ marginTop: '1.3rem' }}>
         <Link to="/items" className="btn btn-primary btn-block">
           準備項目の一覧へ進む
         </Link>

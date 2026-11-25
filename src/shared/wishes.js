@@ -1,3 +1,5 @@
+import { ITEMS } from '../memberB/items'
+
 export const WISH_PRESETS = [
   "温泉旅行にゆっくり行く",
   "家族みんなで食事やお祝いをする",
@@ -35,20 +37,21 @@ export const TALK_TOPICS = [
   "「お墓や葬儀について、こんな雰囲気だといいなと思うことはありますか?」",
   "「大切な書類や通帳をしまっている場所、家族にどう伝えておくと安心ですか?」",
   "「準備がひとつ終わったら、家族みんなでどんな楽しみをしたいですか?」",
-  "「急な入院や災易に備えて、連絡先や相談先を家族で確認しておきたいですか?」",
+  "「急な入院や災害に備えて、連絡先や相談先を家族で確認しておきたいですか?」",
   "「家族に預けておきたい大切な書類や、指定しておく取り扱い方法はありますか?」"
 ]
 
 export const SCREENS_INFO = [
-  { path: "/guide",    no: "01", name: "初回案内・使い方サポート", kind: "core", note: "できること・3ステップ図解・スキップ・見直し" },
-  { path: "/",         no: "02", name: "ホーム・進捗確認",         kind: "core", note: "完了率・次の一歩・途中再開・楽しみプレビュー" },
-  { path: "/survey",   no: "03", name: "生活状況アンケート（開始案内）", kind: "core", note: "シニア向け安心設計・全問順次回答・途中終了対応" },
-  { path: "/survey/q", no: "04", name: "アンケート：質問（分岐）", kind: "core", note: "回答に応じて分岐・途中保存と再開" },
-  { path: "/survey/result", no: "05", name: "質問結果・準備の提案", kind: "core", note: "対応表照合・次の一歩1件・全体像・家族まとめ" },
-  { path: "/items",    no: "06", name: "準備項目一覧（7項目）",    kind: "core", note: "アンケート前も利用可・6つの状態・優先選択" },
-  { path: "/items/detail", no: "07", name: "準備項目の詳細・ガイド", kind: "core", note: "状態変更・手順・相談先リンク・完了時楽しみ表示" },
-  { path: "/wishes",   no: "08", name: "やってみたいことリスト",   kind: "core", note: "選択式と自由入力・ごほうび設定" },
-  { path: "/settings", no: "09", name: "基本設定",                 kind: "core", note: "名前・文字サイズ・初回案内見直し・データ全削除" },
-  { path: "/memories", no: "10", name: "希望・思い出の記録＆アルバム", kind: "plus", note: "文章保存・一覧・詳細・編集・削除" },
-  { path: "/family",   no: "11", name: "家族との対話・ごほうび相談",   kind: "plus", note: "話題・話し合い記録・ごほうびお願いと返答確認" }
+  { path: "/guide",        no: "01", name: "初回案内・使い方サポート",     kind: "core", note: "できること・3ステップ図解・スキップ・見直し" },
+  { path: "/",             no: "02", name: "ホーム（次にすること）",         kind: "core", note: "次の一歩・進捗・途中再開" },
+  { path: "/survey",       no: "03", name: "生活状況アンケート（開始案内）", kind: "core", note: "分岐質問の案内・続きから再開・仮結果確認" },
+  { path: "/survey/q",     no: "04", name: "アンケート：質問（分岐）",       kind: "core", note: "回答に応じた分岐・途中保存と再開" },
+  { path: "/survey/result",no: "05", name: "質問結果・準備の提案",           kind: "core", note: "対応表照合・次の一歩・途中再開導線" },
+  { path: "/items",        no: "06", name: `準備項目一覧（${ITEMS.length}項目）`, kind: "core", note: "件数自動取得・状態管理・優先選択" },
+  { path: "/items/detail", no: "07", name: "準備項目の詳細・ガイド",         kind: "core", note: "最初の一歩・詳細情報の折りたたみ表示" },
+  { path: "/wishes",       no: "08", name: "やってみたいことリスト",         kind: "core", note: "選択式と自由入力・ごほうび設定" },
+  { path: "/settings",     no: "09", name: "基本設定・データ管理",           kind: "core", note: "名前・文字サイズ・サンプル適用・データ初期化" },
+  { path: "/memories",     no: "10", name: "希望・思い出の記録＆アルバム",   kind: "plus", note: "文章・写真保存・一覧・編集・削除" },
+  { path: "/family",       no: "11", name: "家族との対話・相談練習",         kind: "plus", note: "目的別タブ・模擬体験の明示・話し合い記録" },
+  { path: "/more",         no: "12", name: "その他の機能メニュー",           kind: "core", note: "補足機能・設定・案内への入口" }
 ]

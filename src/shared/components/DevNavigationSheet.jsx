@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { SCREENS_INFO } from '../wishes'
 import { useApp } from '../context/AppContext'
@@ -7,15 +7,33 @@ import { Icon } from './SvgIcons'
 export function DevNavigationSheet({ isOpen, onClose }) {
   const location = useLocation()
   const { loadBlankPreset, loadSamplePreset } = useApp()
+  const closeBtnRef = useRef(null)
+
+  useEffect(() => {
+    if (!isOpen) return undefined
+    const frameId = requestAnimationFrame(() => closeBtnRef.current?.focus())
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        onClose()
+      }
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      cancelAnimationFrame(frameId)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [isOpen, onClose])
 
   if (!isOpen) return null
 
   return (
-    <div className="overlay" onClick={onClose} role="dialog" aria-modal="true">
+    <div className="overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label="画面一覧・テストデータ切り替え">
       <div className="sheet" onClick={(e) => e.stopPropagation()}>
         <div className="sh-head">
           <h2>画面一覧・テストデータ切り替え</h2>
           <button
+            ref={closeBtnRef}
             type="button"
             className="iconbtn"
             onClick={onClose}

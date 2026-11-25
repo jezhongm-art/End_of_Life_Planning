@@ -21,6 +21,7 @@ export function SvgSprite() {
         <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.8 6.4.9-4.6 4.5 1.1 6.4-5.7-3-5.7 3 1.1-6.4-4.6-4.5 6.4-.9z"/></symbol>
         <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H12v18H6.5A2.5 2.5 0 0 1 4 18.5zM20 5.5A2.5 2.5 0 0 0 17.5 3H12v18h5.5a2.5 2.5 0 0 0 2.5-2.5z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/></symbol>
         <symbol id="i-paw" viewBox="0 0 24 24"><path d="M12 11.5c-2 0-3.5 1.5-3.5 3.3 0 1.6 1.3 3.2 3.5 3.2s3.5-1.6 3.5-3.2c0-1.8-1.5-3.3-3.5-3.3zm-5-3.5c-.8 0-1.5 1-1.5 2.2s.7 2.2 1.5 2.2 1.5-1 1.5-2.2-.7-2.2-1.5-2.2zm10 0c-.8 0-1.5 1-1.5 2.2s.7 2.2 1.5 2.2 1.5-1 1.5-2.2-.7-2.2-1.5-2.2zm-6.5-2.5c-.8 0-1.5 1-1.5 2.2s.7 2.2 1.5 2.2 1.5-1 1.5-2.2-.7-2.2-1.5-2.2zm3 0c-.8 0-1.5 1-1.5 2.2s.7 2.2 1.5 2.2 1.5-1 1.5-2.2-.7-2.2-1.5-2.2z"/></symbol>
+        <symbol id="i-menu" viewBox="0 0 24 24"><circle cx="6.5" cy="6.5" r="2.2"/><circle cx="17.5" cy="6.5" r="2.2"/><circle cx="6.5" cy="17.5" r="2.2"/><circle cx="17.5" cy="17.5" r="2.2"/></symbol>
       </defs>
     </svg>
   )

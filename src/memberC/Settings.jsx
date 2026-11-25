@@ -1,47 +1,69 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useApp } from '../shared/context/AppContext'
-import { Icon } from '../shared/components/SvgIcons'
+import { AccessibleDialog } from '../shared/components/AccessibleDialog'
+
+const TEXT_SIZE_OPTIONS = [
+  { id: '1', label: '標準（17px）' },
+  { id: '2', label: '大きめ（19px）' },
+  { id: '3', label: '特大（21.5px）' }
+]
 
 export default function Settings() {
   const navigate = useNavigate()
-  const { state, updateSettings, setTextSize, resetAllData } = useApp()
+  const { state, updateSettings, setTextSize, loadSamplePreset, resetAllData } = useApp()
 
   const [nameInput, setNameInput] = useState(state.name || '')
-  const [showConfirm, setShowConfirm] = useState(false)
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const [showSampleConfirm, setShowSampleConfirm] = useState(false)
+
+  const resetCancelRef = useRef(null)
+  const sampleCancelRef = useRef(null)
+
+  useEffect(() => {
+    setNameInput(state.name || '')
+  }, [state.name])
 
   const handleSaveName = (e) => {
     e.preventDefault()
-    updateSettings({ name: nameInput.trim() })
+    updateSettings({ name: nameInput.trim() }, 'お名前を保存しました')
   }
 
   const handleReset = () => {
     resetAllData()
-    setShowConfirm(false)
+    setShowResetConfirm(false)
     navigate('/')
+  }
+
+  const handleLoadSample = () => {
+    loadSamplePreset()
+    setShowSampleConfirm(false)
   }
 
   return (
     <div className="screen-anim">
       <section className="card">
-        <h2 className="card-title">基本設定</h2>
+        <h2 className="card-title">基本設定・データ管理</h2>
         <p className="card-sub">
-          お名前や文字サイズの変更、保存データの管理を行います。
+          お名前や文字サイズの変更、サンプルデータの体験、保存データの管理を行います。
         </p>
       </section>
 
       {/* お名前設定 */}
       <section className="card" style={{ marginTop: '1rem' }}>
-        <h3 className="card-title" style={{ fontSize: '1.04rem' }}>お名前</h3>
+        <h3 className="card-title" style={{ fontSize: '1.04rem' }}>
+          <label htmlFor="settings-name-input">お名前</label>
+        </h3>
         <p className="card-sub">ホーム画面などで表示されるお名前です。</p>
 
         <form onSubmit={handleSaveName} style={{ marginTop: '.6rem' }}>
           <input
+            id="settings-name-input"
             type="text"
             className="input"
             value={nameInput}
             onChange={(e) => setNameInput(e.target.value)}
-            placeholder="山田 花子"
+            placeholder="例：ニックネームやお名前"
           />
           <button
             type="submit"
@@ -58,27 +80,42 @@ export default function Settings() {
         <h3 className="card-title" style={{ fontSize: '1.04rem' }}>文字サイズ</h3>
         <p className="card-sub">アプリ全体の文字サイズを切り替えます。</p>
 
-        <div className="segtabs" style={{ marginTop: '.7rem', gridTemplateColumns: 'repeat(3, 1fr)' }}>
+        <div
+          className="segtabs segtabs-3"
+          style={{ marginTop: '.7rem', marginBottom: 0 }}
+          role="group"
+          aria-label="文字サイズの選択"
+        >
+          {TEXT_SIZE_OPTIONS.map((opt) => {
+            const isSelected = state.textSize === opt.id
+            return (
+              <button
+                key={opt.id}
+                type="button"
+                className={`segtab ${isSelected ? 'on' : ''}`}
+                aria-pressed={isSelected}
+                onClick={() => setTextSize(opt.id)}
+              >
+                {opt.label}
+              </button>
+            )
+          })}
+        </div>
+      </section>
+
+      {/* サンプルデータ体験 */}
+      <section className="card" style={{ marginTop: '1rem' }}>
+        <h3 className="card-title" style={{ fontSize: '1.04rem' }}>サンプルデータの体験</h3>
+        <p className="card-sub">
+          初期状態ではご家族のお名前や会話記録は空になっています。入力例や進捗イメージを確認したいときだけ、サンプルデータを読み込めます。
+        </p>
+        <div style={{ marginTop: '.7rem' }}>
           <button
             type="button"
-            className={`segtab ${state.textSize === '1' ? 'on' : ''}`}
-            onClick={() => setTextSize('1')}
+            className="btn btn-sub btn-block"
+            onClick={() => setShowSampleConfirm(true)}
           >
-            標準（17px）
-          </button>
-          <button
-            type="button"
-            className={`segtab ${state.textSize === '2' ? 'on' : ''}`}
-            onClick={() => setTextSize('2')}
-          >
-            大きめ（19px）
-          </button>
-          <button
-            type="button"
-            className={`segtab ${state.textSize === '3' ? 'on' : ''}`}
-            onClick={() => setTextSize('3')}
-          >
-            特大（21.5px）
+            サンプルデータを読み込む
           </button>
         </div>
       </section>
@@ -102,46 +139,72 @@ export default function Settings() {
           データの全削除（初期化）
         </h3>
         <p className="card-sub">
-          このブラウザに保存されている進捗・アンケート回答・メモをすべて消去します。
+          このブラウザに保存されている進捗・アンケート回答・メモ・話し合い記録をすべて消去します。
         </p>
         <div style={{ marginTop: '.7rem' }}>
           <button
             type="button"
             className="btn btn-danger btn-block"
-            onClick={() => setShowConfirm(true)}
+            onClick={() => setShowResetConfirm(true)}
           >
             保存データをすべて初期化する
           </button>
         </div>
       </section>
 
-      {/* 確認ダイアログ */}
-      {showConfirm && (
-        <div className="overlay center" role="dialog" aria-modal="true">
-          <div className="dialog">
-            <h2>すべてのデータを削除しますか？</h2>
-            <p>
-              この操作を行うと、これまでに登録した準備の進捗、アンケートの回答、思い出などのデータがすべて消去され、初期状態に戻ります。
-            </p>
-            <div className="btn-row" style={{ marginTop: '1.2rem' }}>
-              <button
-                type="button"
-                className="btn btn-ghost"
-                onClick={() => setShowConfirm(false)}
-              >
-                キャンセル
-              </button>
-              <button
-                type="button"
-                className="btn btn-danger"
-                onClick={handleReset}
-              >
-                削除する
-              </button>
-            </div>
-          </div>
+      {/* サンプルデータ読み込み確認ダイアログ */}
+      <AccessibleDialog
+        isOpen={showSampleConfirm}
+        onClose={() => setShowSampleConfirm(false)}
+        title="サンプルデータを読み込みますか？"
+        description="現在の進捗や記録はサンプルデータ（記入例）に置き換わります。あとから「保存データをすべて初期化する」でいつでも空に戻せます。"
+        initialFocusRef={sampleCancelRef}
+      >
+        <div className="btn-row" style={{ marginTop: '1.2rem' }}>
+          <button
+            ref={sampleCancelRef}
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => setShowSampleConfirm(false)}
+          >
+            キャンセル
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleLoadSample}
+          >
+            読み込む
+          </button>
         </div>
-      )}
+      </AccessibleDialog>
+
+      {/* 全削除確認ダイアログ */}
+      <AccessibleDialog
+        isOpen={showResetConfirm}
+        onClose={() => setShowResetConfirm(false)}
+        title="すべてのデータを削除しますか？"
+        description="この操作を行うと、これまでに登録した準備の進捗、アンケートの回答、思い出、話し合い記録などのデータがすべて消去され、空の初期状態に戻ります。"
+        initialFocusRef={resetCancelRef}
+      >
+        <div className="btn-row" style={{ marginTop: '1.2rem' }}>
+          <button
+            ref={resetCancelRef}
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => setShowResetConfirm(false)}
+          >
+            キャンセル
+          </button>
+          <button
+            type="button"
+            className="btn btn-danger"
+            onClick={handleReset}
+          >
+            削除する
+          </button>
+        </div>
+      </AccessibleDialog>
     </div>
   )
 }

@@ -11,11 +11,18 @@ export function Header({ title, showBack }) {
   const isHome = location.pathname === '/'
   const shouldShowBack = showBack !== undefined ? showBack : !isHome
 
+  const currentSize = state.textSize || '2'
   const textSizeLabel = {
     '1': '文字:標準',
     '2': '文字:大',
     '3': '文字:特大'
-  }[state.textSize || '2']
+  }[currentSize]
+
+  const textSizeName = {
+    '1': '標準',
+    '2': '大きめ',
+    '3': '特大'
+  }[currentSize]
 
   return (
     <header className="top">
@@ -49,12 +56,12 @@ export function Header({ title, showBack }) {
           className="textsize-btn"
           onClick={cycleTextSize}
           title="文字サイズを切り替える"
-          aria-label="文字サイズを切り替える"
+          aria-label={`文字サイズを切り替える（現在：${textSizeName}）`}
         >
           {textSizeLabel}
         </button>
 
-        <Link to="/settings" className="iconbtn" aria-label="設定画面を開く">
+        <Link to="/settings" className="iconbtn" aria-label="基本設定を開く">
           <Icon name="gear" />
         </Link>
       </div>

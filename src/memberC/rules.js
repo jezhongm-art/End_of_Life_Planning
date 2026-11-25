@@ -1,48 +1,93 @@
-import { ITEMS, TOPICS } from '../memberB/items'
-import { QUIZ_ROOTS, QUIZ_NODES } from './questions'
+import { ITEMS } from '../memberB/items'
+import { QUIZ_NODES } from './questions'
 
-/* ---------- アンケートフロー構築（全8問固定フロー） ---------- */
-export function computeQuizFlow() {
-  return [
-    'q_money_1',
-    'q_money_2',
-    'q_medical_1',
-    'q_medical_2',
-    'q_house_1',
-    'q_grave_1',
-    'q_family_1',
-    'q_pet_1'
-  ]
+export const QUIZ_FLOW_RANGE = {
+  min: 7,
+  max: 12
+}
+
+/* ---------- アンケートフロー構築（回答に応じた分岐フロー） ---------- */
+export function computeQuizFlow(answers = {}) {
+  const flow = []
+
+  // 1. お金・保険
+  flow.push('q_money_1')
+  if (answers.q_money_1 !== undefined && answers.q_money_1 !== 0 && answers.q_money_1 !== 4) {
+    flow.push('q_money_2')
+  }
+
+  // 2. 医療・介護
+  flow.push('q_medical_1')
+  if (answers.q_medical_1 === 1 || answers.q_medical_1 === 2) {
+    flow.push('q_medical_2')
+  }
+
+  // 3. 住まい（持ち家・賃貸で分岐）
+  flow.push('q_house_type')
+  if (answers.q_house_type === 0) {
+    flow.push('q_house_own')
+  } else if (answers.q_house_type === 1) {
+    flow.push('q_house_rent')
+  }
+
+  // 4. お墓・葬儀
+  flow.push('q_grave_1')
+  if (answers.q_grave_1 === 1 || answers.q_grave_1 === 2) {
+    flow.push('q_grave_2')
+  }
+
+  // 5. 家族に伝えること（終活ノートと家族との話し合いの2項目）
+  flow.push('q_family_1')
+  flow.push('q_family_2')
+
+  // 6. ペットの終活
+  flow.push('q_pet_1')
+  if (answers.q_pet_1 === 1) {
+    flow.push('q_pet_2')
+  }
+
+  return flow
+}
+
+/**
+ * 現在の分岐フローに含まれる質問の回答だけを残す
+ */
+export function pruneAnswersToFlow(answers = {}) {
+  const flow = computeQuizFlow(answers)
+  const pruned = {}
+  flow.forEach((qId) => {
+    if (answers[qId] !== undefined) {
+      pruned[qId] = answers[qId]
+    }
+  })
+  return { flow, answers: pruned }
 }
 
 /* ---------- ルールベース回答分析（対応表照合） ---------- */
-export function computeAnalysisFromAnswers(answers = {}, itemsMap = {}) {
+export function computeAnalysisFromAnswers(answers = {}, itemsMap = {}, options = {}) {
+  const { answers: validAnswers, flow } = pruneAnswersToFlow(answers)
   const newly = []      // {id, reason}
   const known = []      // {id, reason}
   const naSuggest = []  // {id, reason}
-  const touchedIds = {}
   const suggestMap = {}
 
-  Object.keys(answers).forEach((qId) => {
+  Object.keys(validAnswers).forEach((qId) => {
     const node = QUIZ_NODES[qId]
     if (!node) return
-    const opt = node.opts[answers[qId]]
+    const opt = node.opts[validAnswers[qId]]
     if (!opt) return
 
     if (opt.suggest) {
-      touchedIds[opt.suggest] = true
       suggestMap[opt.suggest] = opt.reason || "質問の回答から確認が必要と見つかりました。"
     }
     if (opt.known) {
       opt.known.forEach((itemId) => {
-        touchedIds[itemId] = true
         if (!suggestMap[itemId]) {
           known.push({ id: itemId, reason: opt.reason || "すでに把握・対応できています。" })
         }
       })
     }
     if (opt.naCandidate) {
-      touchedIds[opt.naCandidate] = true
       naSuggest.push({ id: opt.naCandidate, reason: opt.reason })
     }
   })
@@ -84,6 +129,8 @@ export function computeAnalysisFromAnswers(answers = {}, itemsMap = {}) {
     known: Object.values(knownIds),
     naSuggest,
     unconfirmed,
-    totalAnswered: Object.keys(answers).length
+    totalAnswered: Object.keys(validAnswers).length,
+    totalQuestions: flow.length,
+    isPartial: !!options.isPartial
   }
 }

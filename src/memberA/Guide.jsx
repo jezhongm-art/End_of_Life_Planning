@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useApp } from '../shared/context/AppContext'
+import { QUIZ_FLOW_RANGE } from '../memberC/rules'
 import { Icon } from '../shared/components/SvgIcons'
 
 export default function Guide() {
@@ -58,7 +59,7 @@ export default function Guide() {
             <div>
               <p style={{ fontWeight: 800, color: 'var(--ink)' }}>簡単な質問に答える</p>
               <p className="note" style={{ marginTop: '.2rem' }}>
-                全8問の質問に答えるだけ。分からない質問はパスしても大丈夫です。
+                ご状況に合わせて{QUIZ_FLOW_RANGE.min}〜{QUIZ_FLOW_RANGE.max}問に分岐する質問に答えるだけ。分からない質問はパスしても大丈夫です。
               </p>
             </div>
           </div>
@@ -110,18 +111,20 @@ export default function Guide() {
 
       {/* お名前の登録 */}
       <section className="card" style={{ marginTop: '1rem' }}>
-        <h3 className="card-title" style={{ fontSize: '1.04rem' }}>お名前の登録（任意）</h3>
+        <h3 className="card-title" style={{ fontSize: '1.04rem' }}>
+          <label htmlFor="guide-name-input">お名前の登録（任意）</label>
+        </h3>
         <p className="card-sub">
           ホーム画面などでご自身に向けた呼びかけとして使用します。ニックネームでも構いません（未入力の場合は「ご利用者」様と表示されます）。
         </p>
         <div style={{ marginTop: '.65rem' }}>
           <input
+            id="guide-name-input"
             type="text"
             className="input"
             value={nameInput}
             onChange={(e) => setNameInput(e.target.value)}
-            placeholder="例：山田 太郎"
-            aria-label="お名前"
+            placeholder="例：ニックネームやお名前"
           />
         </div>
       </section>

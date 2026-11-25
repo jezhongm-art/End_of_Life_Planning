@@ -4,6 +4,7 @@ import { SvgSprite } from './shared/components/SvgIcons'
 import { Header } from './shared/components/Header'
 import { BottomNav } from './shared/components/BottomNav'
 import { ScrollToTop } from './shared/components/ScrollToTop'
+import { useApp } from './shared/context/AppContext'
 
 // ■ A担当の画面
 import Home from './memberA/Home'
@@ -12,6 +13,7 @@ import SurveyTopics from './memberA/SurveyTopics'
 import SurveyQuestions from './memberA/SurveyQuestions'
 import SurveyResult from './memberA/SurveyResult'
 import WishList from './memberA/WishList'
+import More from './memberA/More'
 
 // ■ B担当の画面
 import ItemList from './memberB/ItemList'
@@ -24,6 +26,7 @@ import Settings from './memberC/Settings'
 
 export default function App() {
   const location = useLocation()
+  const { saveError, loadError, clearSaveError, clearLoadError, retrySave } = useApp()
 
   // 画面ごとのヘッダータイトル定義
   const getHeaderTitle = (pathname) => {
@@ -49,7 +52,9 @@ export default function App() {
       case '/memories':
         return '希望・思い出の記録'
       case '/family':
-        return '家族との対話・ごほうび相談'
+        return '家族との対話・相談練習'
+      case '/more':
+        return 'その他の機能'
       default:
         return null
     }
@@ -61,11 +66,51 @@ export default function App() {
     <>
       <SvgSprite />
 
+      <a href="#screen" className="skip-link">
+        メインコンテンツへ移動
+      </a>
+
       <div className="app">
         <ScrollToTop />
         <Header title={title} />
 
-        <main id="screen">
+        {(loadError || saveError) && (
+          <div
+            className="notice notice-rose"
+            role="alert"
+            aria-live="assertive"
+            style={{ marginBottom: '1rem' }}
+          >
+            <div className="n-body">
+              <p className="n-title">データの保存・読み込みに関するお知らせ</p>
+              {loadError && <p className="n-sub" style={{ color: 'var(--ink)' }}>{loadError}</p>}
+              {saveError && <p className="n-sub" style={{ color: 'var(--ink)' }}>{saveError.message}</p>}
+              <div className="btn-row" style={{ marginTop: '.65rem' }}>
+                {saveError && (
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-small"
+                    onClick={retrySave}
+                  >
+                    もう一度保存を試す
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-small"
+                  onClick={() => {
+                    if (loadError) clearLoadError()
+                    if (saveError) clearSaveError()
+                  }}
+                >
+                  閉じる
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <main id="screen" tabIndex={-1} className="screen-focus">
           <Routes>
             {/* ■ A担当の画面 */}
             <Route path="/" element={<Home />} />
@@ -74,6 +119,7 @@ export default function App() {
             <Route path="/survey/q" element={<SurveyQuestions />} />
             <Route path="/survey/result" element={<SurveyResult />} />
             <Route path="/wishes" element={<WishList />} />
+            <Route path="/more" element={<More />} />
 
             {/* ■ B担当の画面 */}
             <Route path="/items" element={<ItemList />} />

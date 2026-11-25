@@ -1,40 +1,40 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../shared/context/AppContext'
 import { QUIZ_NODES } from '../memberC/questions'
-import { computeQuizFlow } from '../memberC/rules'
+import { computeQuizFlow, pruneAnswersToFlow } from '../memberC/rules'
 import { QuizProgressBar } from '../shared/components/ProgressBar'
 import { Icon } from '../shared/components/SvgIcons'
 
 export default function SurveyQuestions() {
   const navigate = useNavigate()
-  const { state, saveQuizAnswer, finishQuiz, toast } = useApp()
+  const { state, saveQuizProgress, previewPartialQuiz, finishQuiz, toast } = useApp()
 
-  // 音声読み上げ管理
   const [isSpeaking, setIsSpeaking] = useState(false)
-
-  // 質問キューの構築
-  const [flow, setFlow] = useState([])
-  const [curIdx, setCurIdx] = useState(0)
-
-  // ローカルの一時回答ステート
   const [answers, setAnswers] = useState(() => ({ ...state.quizAnswers }))
+  const [flow, setFlow] = useState(() => computeQuizFlow(state.quizAnswers))
+  const [curIdx, setCurIdx] = useState(() => {
+    const initialFlow = computeQuizFlow(state.quizAnswers)
+    const firstUnanswered = initialFlow.findIndex((qId) => state.quizAnswers[qId] === undefined)
+    return firstUnanswered >= 0 ? firstUnanswered : 0
+  })
 
-  // 質問フロー初期化
-  useEffect(() => {
-    const queue = computeQuizFlow()
-    setFlow(queue)
-    // 既に回答があれば未回答の最初のインデックスを探す
-    const firstUnanswered = queue.findIndex((qId) => answers[qId] === undefined)
-    if (firstUnanswered >= 0) {
-      setCurIdx(firstUnanswered)
-    } else {
-      setCurIdx(0)
-    }
-  }, [])
+  const questionHeadingRef = useRef(null)
+  const hasMountedRef = useRef(false)
 
   const curQId = flow[curIdx]
   const node = curQId ? QUIZ_NODES[curQId] : null
+
+  // 質問が切り替わったときに質問文へフォーカスを移動
+  useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true
+      return
+    }
+    if (questionHeadingRef.current) {
+      questionHeadingRef.current.focus()
+    }
+  }, [curQId])
 
   // 音声読み上げ
   const handleToggleSpeak = () => {
@@ -82,23 +82,28 @@ export default function SurveyQuestions() {
           style={{ marginTop: '1rem' }}
           onClick={() => navigate('/survey')}
         >
-          分野選択に戻る
+          アンケート案内に戻る
         </button>
       </div>
     )
   }
 
   const handleSelectOption = (optIdx) => {
-    const updatedAnswers = { ...answers, [curQId]: optIdx }
-    setAnswers(updatedAnswers)
-    saveQuizAnswer(curQId, optIdx)
+    const mergedAnswers = { ...answers, [curQId]: optIdx }
+    const { flow: nextFlow, answers: cleanedAnswers } = pruneAnswersToFlow(mergedAnswers)
 
-    // 次の質問へ、または終了
-    if (curIdx + 1 < flow.length) {
-      setCurIdx(curIdx + 1)
+    setAnswers(cleanedAnswers)
+    setFlow(nextFlow)
+
+    const currentPos = nextFlow.indexOf(curQId)
+    const nextIdx = currentPos >= 0 ? currentPos + 1 : curIdx + 1
+
+    if (nextIdx < nextFlow.length) {
+      saveQuizProgress(cleanedAnswers)
+      setCurIdx(nextIdx)
       window.scrollTo(0, 0)
     } else {
-      finishQuiz(updatedAnswers)
+      finishQuiz(cleanedAnswers)
       navigate('/survey/result')
     }
   }
@@ -112,8 +117,18 @@ export default function SurveyQuestions() {
     }
   }
 
-  const handleFinishEarly = () => {
-    finishQuiz(answers)
+  const handlePauseAndSave = () => {
+    const { answers: cleanedAnswers } = pruneAnswersToFlow(answers)
+    const ok = saveQuizProgress(cleanedAnswers)
+    if (ok) {
+      toast('回答を途中保存しました。「続きから答える」で再開できます')
+    }
+    navigate('/survey')
+  }
+
+  const handlePreviewPartial = () => {
+    const { answers: cleanedAnswers } = pruneAnswersToFlow(answers)
+    previewPartialQuiz(cleanedAnswers)
     navigate('/survey/result')
   }
 
@@ -128,10 +143,13 @@ export default function SurveyQuestions() {
         total={flow.length}
         answeredCount={answeredCount}
       />
+      <p className="note" style={{ marginTop: '-.4rem', marginBottom: '.7rem', fontSize: '.82rem' }}>
+        ※ ご回答の内容に合わせて質問数が変わります
+      </p>
 
       {/* 質問カード */}
       <section className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '.5rem', flexWrap: 'wrap' }}>
           <span
             style={{
               display: 'inline-flex',
@@ -153,18 +171,24 @@ export default function SurveyQuestions() {
             className="btn btn-ghost btn-small"
             style={{ minHeight: '2.2rem', padding: '0 .65rem', fontSize: '.82rem' }}
             onClick={handleToggleSpeak}
+            aria-pressed={isSpeaking}
           >
             <Icon name="speaker" />
             {isSpeaking ? '停止' : '読み上げる'}
           </button>
         </div>
 
-        <h2 className="qbig" style={{ marginTop: '.65rem' }}>
+        <h2
+          ref={questionHeadingRef}
+          tabIndex={-1}
+          className="qbig screen-focus"
+          style={{ marginTop: '.65rem' }}
+        >
           {node.text}
         </h2>
 
         {/* 選択肢 */}
-        <div style={{ marginTop: '.8rem' }}>
+        <div style={{ marginTop: '.8rem' }} role="group" aria-label={node.text}>
           {node.opts.map((opt, idx) => {
             const isSelected = selectedOpt === idx
             return (
@@ -172,6 +196,7 @@ export default function SurveyQuestions() {
                 key={idx}
                 type="button"
                 className={`opt ${isSelected ? 'on' : ''}`}
+                aria-pressed={isSelected}
                 onClick={() => handleSelectOption(idx)}
               >
                 <span className="mk" aria-hidden="true">
@@ -185,23 +210,35 @@ export default function SurveyQuestions() {
       </section>
 
       {/* ナビゲーション操作ボタン */}
-      <div className="btn-row" style={{ marginTop: '1.2rem' }}>
+      <div className="btn-row" style={{ marginTop: '1.1rem' }}>
         <button
           type="button"
           className="btn btn-ghost"
           onClick={handlePrev}
         >
-          前の質問
+          {curIdx > 0 ? '前の質問へ' : '案内へ戻る'}
         </button>
 
         <button
           type="button"
           className="btn btn-sub"
-          onClick={handleFinishEarly}
+          onClick={handlePauseAndSave}
         >
-          終了して結果を見る
+          途中保存して中断する
         </button>
       </div>
+
+      {answeredCount > 0 && (
+        <div style={{ textAlign: 'center', marginTop: '.75rem' }}>
+          <button
+            type="button"
+            className="btn btn-ghost btn-small"
+            onClick={handlePreviewPartial}
+          >
+            ここまでの回答で仮の結果を見る（{answeredCount}問回答済み）
+          </button>
+        </div>
+      )}
     </div>
   )
 }

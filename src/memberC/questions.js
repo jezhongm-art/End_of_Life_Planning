@@ -1,7 +1,7 @@
 export const QUIZ_ROOTS = {
   money: "q_money_1",
   medical: "q_medical_1",
-  house: "q_house_1",
+  house: "q_house_type",
   grave: "q_grave_1",
   family: "q_family_1",
   pet: "q_pet_1"
@@ -27,7 +27,7 @@ export const QUIZ_NODES = {
     opts: [
       { t: "書き出している", suggest: "money", reason: "一覧をお持ちなので、次は保管場所をご家族に伝える進め方ができます。" },
       { t: "まだ書き出していない", suggest: "money", reason: "一覧をメモにしておくと、ご自身での見直しも簡単になります。" },
-      { t: "保険には入っていない", reason: "保険に未加入との回答です。" },
+      { t: "保険には入っていない", known: ["insurance"], reason: "保険には未加入のため、必要に応じて年金記録のみ確認できます。" },
       { t: "分からない・答えたくない", skip: true }
     ]
   },
@@ -51,6 +51,17 @@ export const QUIZ_NODES = {
       { t: "相談したことがある", suggest: "medical", reason: "医師に相談されているため、ご家族との話し合いにつなげられます。" },
       { t: "まだ相談していない", suggest: "medical", reason: "今の希望を書き出したうえで、次の診察時に相談する手順をおすすめします。" },
       { t: "かかりつけ医はいない", suggest: "medical", reason: "まずは紙やノートに希望を書き出すことから始められます。" },
+      { t: "答えたくない", skip: true }
+    ]
+  },
+  q_house_type: {
+    topic: "house",
+    label: "住まい",
+    text: "現在のお住まいは、持ち家・賃貸のどちらですか?",
+    opts: [
+      { t: "持ち家（ご自身やご家族の所有）" },
+      { t: "賃貸（アパート・マンション・借家など）" },
+      { t: "ご家族と同居・施設など（契約書の管理は不要）", known: ["house"], reason: "現在のお住まいについて特別な契約書類の整理は不要と回答されました。" },
       { t: "答えたくない", skip: true }
     ]
   },

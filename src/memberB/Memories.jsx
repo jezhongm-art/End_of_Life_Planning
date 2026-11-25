@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { useApp } from '../shared/context/AppContext'
 import { MEMO_QUESTIONS } from '../shared/wishes'
 import { Icon } from '../shared/components/SvgIcons'
 import { compressImage } from '../shared/utils/imageCompressor'
+import { AccessibleDialog } from '../shared/components/AccessibleDialog'
 
 export default function Memories() {
   const { state, addMemo, updateMemo, deleteMemo, toast } = useApp()
@@ -15,6 +16,8 @@ export default function Memories() {
   const [imageInput, setImageInput] = useState(null)
   const [editingMemoId, setEditingMemoId] = useState(null)
   const [expandedId, setExpandedId] = useState(null)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const cancelRef = useRef(null)
 
   const activeQuestion = MEMO_QUESTIONS[selectedCatIdx]
 
@@ -22,6 +25,18 @@ export default function Memories() {
     setSelectedCatIdx(idx)
     if (!editingMemoId) {
       setTitleInput(MEMO_QUESTIONS[idx].q)
+    }
+  }
+
+  const handleTabKeyDown = (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      e.preventDefault()
+      const next = activeTab === 'write' ? 'album' : 'write'
+      if (next === 'write' && !editingMemoId && !titleInput) {
+        setTitleInput(activeQuestion.q)
+      }
+      setActiveTab(next)
+      document.getElementById(`memories-tab-${next}`)?.focus()
     }
   }
 
@@ -81,17 +96,20 @@ export default function Memories() {
     const tag = tagInput.trim()
     const cat = activeQuestion.cat
 
+    let ok = false
     if (editingMemoId) {
-      updateMemo(editingMemoId, {
+      ok = updateMemo(editingMemoId, {
         title,
         text,
         tag,
         image: imageInput,
         cat
       })
-      setEditingMemoId(null)
+      if (ok) {
+        setEditingMemoId(null)
+      }
     } else {
-      addMemo({
+      ok = addMemo({
         cat,
         title,
         text,
@@ -100,11 +118,20 @@ export default function Memories() {
       })
     }
 
-    setTextInput('')
-    setTitleInput('')
-    setTagInput('')
-    setImageInput(null)
-    setActiveTab('album')
+    if (ok) {
+      setTextInput('')
+      setTitleInput('')
+      setTagInput('')
+      setImageInput(null)
+      setActiveTab('album')
+    }
+  }
+
+  const handleConfirmDelete = () => {
+    if (deleteTarget) {
+      deleteMemo(deleteTarget.id)
+      setDeleteTarget(null)
+    }
   }
 
   const categoryColorClass = (cat) => {
@@ -124,9 +151,18 @@ export default function Memories() {
         </p>
 
         {/* タブ切り替え */}
-        <div className="segtabs" style={{ marginTop: '.9rem' }}>
+        <div
+          className="segtabs"
+          style={{ marginTop: '.9rem', marginBottom: 0 }}
+          role="tablist"
+          aria-label="思い出の記録メニュー"
+        >
           <button
+            id="memories-tab-write"
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'write'}
+            tabIndex={activeTab === 'write' ? 0 : -1}
             className={`segtab ${activeTab === 'write' ? 'on' : ''}`}
             onClick={() => {
               if (activeTab !== 'write') {
@@ -136,13 +172,19 @@ export default function Memories() {
                 setActiveTab('write')
               }
             }}
+            onKeyDown={handleTabKeyDown}
           >
             {editingMemoId ? '思い出を編集する' : '思い出を書く'}
           </button>
           <button
+            id="memories-tab-album"
             type="button"
+            role="tab"
+            aria-selected={activeTab === 'album'}
+            tabIndex={activeTab === 'album' ? 0 : -1}
             className={`segtab ${activeTab === 'album' ? 'on' : ''}`}
             onClick={() => setActiveTab('album')}
+            onKeyDown={handleTabKeyDown}
           >
             思い出アルバム（{state.memos.length}件）
           </button>
@@ -150,7 +192,7 @@ export default function Memories() {
       </section>
 
       {activeTab === 'write' ? (
-        <>
+        <div role="tabpanel" aria-labelledby="memories-tab-write">
           {/* テーマ選択 */}
           <section className="card" style={{ marginTop: '1rem' }}>
             <h3 className="card-title" style={{ fontSize: '1rem' }}>テーマを選ぶ</h3>
@@ -162,6 +204,7 @@ export default function Memories() {
                   key={idx}
                   type="button"
                   className={`chip ${selectedCatIdx === idx ? 'chip-plus on' : ''}`}
+                  aria-pressed={selectedCatIdx === idx}
                   onClick={() => handleSelectCat(idx)}
                 >
                   {mq.cat}
@@ -184,8 +227,11 @@ export default function Memories() {
           <section className="card" style={{ marginTop: '1rem' }}>
             <form onSubmit={handleSave}>
               <div>
-                <label className="card-sub" style={{ fontWeight: 700 }}>タイトル</label>
+                <label htmlFor="memo-title-input" className="card-sub" style={{ fontWeight: 700, display: 'block' }}>
+                  タイトル
+                </label>
                 <input
+                  id="memo-title-input"
                   type="text"
                   className="input"
                   style={{ marginTop: '.3rem' }}
@@ -196,9 +242,12 @@ export default function Memories() {
               </div>
 
               <div style={{ marginTop: '.8rem' }}>
-                <label className="card-sub" style={{ fontWeight: 700 }}>本文・思い出の文章</label>
+                <label htmlFor="memo-text-input" className="card-sub" style={{ fontWeight: 700, display: 'block' }}>
+                  本文・思い出の文章
+                </label>
                 <div className="field" style={{ marginTop: '.3rem' }}>
                   <textarea
+                    id="memo-text-input"
                     rows={5}
                     value={textInput}
                     onChange={(e) => setTextInput(e.target.value)}
@@ -210,7 +259,9 @@ export default function Memories() {
 
               {/* 写真添付エリア */}
               <div style={{ marginTop: '.8rem' }}>
-                <label className="card-sub" style={{ fontWeight: 700 }}>思い出の写真（任意・1枚）</label>
+                <span className="card-sub" style={{ fontWeight: 700, display: 'block' }}>
+                  思い出の写真（任意・1枚）
+                </span>
                 {imageInput ? (
                   <div className="img-preview-wrap">
                     <img src={imageInput} alt="思い出の写真プレビュー" />
@@ -228,7 +279,7 @@ export default function Memories() {
                     <input
                       type="file"
                       accept="image/*"
-                      style={{ display: 'none' }}
+                      className="sr-only"
                       onChange={handleFileChange}
                     />
                     <Icon name="clip" style={{ width: '1.4rem', height: '1.4rem', color: 'var(--brand)' }} />
@@ -241,8 +292,11 @@ export default function Memories() {
               </div>
 
               <div style={{ marginTop: '.8rem' }}>
-                <label className="card-sub" style={{ fontWeight: 700 }}>タグ（任意）</label>
+                <label htmlFor="memo-tag-input" className="card-sub" style={{ fontWeight: 700, display: 'block' }}>
+                  タグ（任意）
+                </label>
                 <input
+                  id="memo-tag-input"
                   type="text"
                   className="input"
                   style={{ marginTop: '.3rem' }}
@@ -272,10 +326,10 @@ export default function Memories() {
               </div>
             </form>
           </section>
-        </>
+        </div>
       ) : (
         /* アルバム一覧 */
-        <div style={{ marginTop: '1rem' }}>
+        <div role="tabpanel" aria-labelledby="memories-tab-album" style={{ marginTop: '1rem' }}>
           {state.memos.length === 0 ? (
             <div className="empty">
               まだ保存された思い出はありません。<br />
@@ -292,6 +346,7 @@ export default function Memories() {
                   <button
                     type="button"
                     className="mcard-btn"
+                    aria-expanded={isExpanded}
                     onClick={() => setExpandedId(isExpanded ? null : m.id)}
                   >
                     <div className="mcard-layout">
@@ -337,11 +392,7 @@ export default function Memories() {
                       <button
                         type="button"
                         className="btn btn-danger btn-small"
-                        onClick={() => {
-                          if (window.confirm('この思い出を削除してもよろしいですか？')) {
-                            deleteMemo(m.id)
-                          }
-                        }}
+                        onClick={() => setDeleteTarget(m)}
                       >
                         削除する
                       </button>
@@ -353,6 +404,36 @@ export default function Memories() {
           )}
         </div>
       )}
+
+      <AccessibleDialog
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        title="この思い出を削除しますか？"
+        description={
+          deleteTarget
+            ? `「${deleteTarget.title}」を削除します。この操作は取り消せません。`
+            : undefined
+        }
+        initialFocusRef={cancelRef}
+      >
+        <div className="btn-row" style={{ marginTop: '1.2rem' }}>
+          <button
+            ref={cancelRef}
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => setDeleteTarget(null)}
+          >
+            キャンセル
+          </button>
+          <button
+            type="button"
+            className="btn btn-danger"
+            onClick={handleConfirmDelete}
+          >
+            削除する
+          </button>
+        </div>
+      </AccessibleDialog>
     </div>
   )
 }

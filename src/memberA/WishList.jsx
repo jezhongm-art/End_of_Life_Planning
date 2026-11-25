@@ -1,26 +1,32 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { useApp } from '../shared/context/AppContext'
 import { WISH_PRESETS } from '../shared/wishes'
 import { Icon } from '../shared/components/SvgIcons'
+import { AccessibleDialog } from '../shared/components/AccessibleDialog'
 
 export default function WishList() {
   const { state, addWish, toggleWish, setRewardWish, deleteWish } = useApp()
   const [inputText, setInputText] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const cancelRef = useRef(null)
 
   const handleAddCustom = (e) => {
     e.preventDefault()
     if (!inputText.trim()) return
-    addWish(inputText.trim())
-    setInputText('')
+    const ok = addWish(inputText.trim())
+    if (ok) {
+      setInputText('')
+    }
   }
 
   const handleAddPreset = (text) => {
     addWish(text)
   }
 
-  const handleDelete = (wish) => {
-    if (window.confirm(`「${wish.text}」をリストから削除してもよろしいですか？`)) {
-      deleteWish(wish.id)
+  const handleConfirmDelete = () => {
+    if (deleteTarget) {
+      deleteWish(deleteTarget.id)
+      setDeleteTarget(null)
     }
   }
 
@@ -69,12 +75,15 @@ export default function WishList() {
 
       {/* 自由入力フォーム */}
       <section className="card" style={{ marginTop: '1rem' }}>
-        <h3 className="card-title" style={{ fontSize: '1rem' }}>自分で自由に入力する</h3>
+        <h3 className="card-title" style={{ fontSize: '1rem' }}>
+          <label htmlFor="wish-custom-input">自分で自由に入力する</label>
+        </h3>
         <form onSubmit={handleAddCustom} style={{ marginTop: '.6rem' }}>
           <input
+            id="wish-custom-input"
             type="text"
             className="input"
-            placeholder="例）孫と一緒に動物園へ行く"
+            placeholder="例）家族と一緒に動物園へ行く"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
           />
@@ -107,11 +116,12 @@ export default function WishList() {
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '.65rem' }}>
                 <input
                   type="checkbox"
-                  style={{ width: '1.35rem', height: '1.35rem', marginTop: '.3rem', accentColor: 'var(--brand)' }}
+                  style={{ width: '1.35rem', height: '1.35rem', marginTop: '.3rem', accentColor: 'var(--brand)', flex: 'none' }}
                   checked={w.done}
                   onChange={() => toggleWish(w.id)}
+                  aria-label={`「${w.text}」を達成済みにする`}
                 />
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flexWrap: 'wrap' }}>
                     <span
                       style={{
@@ -140,7 +150,7 @@ export default function WishList() {
                         <button
                           type="button"
                           className="btn btn-ghost btn-small"
-                          style={{ minHeight: '2.1rem', padding: '0 .7rem', fontSize: '.8rem' }}
+                          style={{ minHeight: '2.35rem', padding: '0 .75rem', fontSize: '.84rem' }}
                           onClick={() => setRewardWish(w.id)}
                         >
                           ごほうびに設定
@@ -152,12 +162,12 @@ export default function WishList() {
                       type="button"
                       className="btn btn-ghost btn-small"
                       style={{
-                        minHeight: '2.1rem',
-                        padding: '0 .7rem',
-                        fontSize: '.8rem',
+                        minHeight: '2.35rem',
+                        padding: '0 .75rem',
+                        fontSize: '.84rem',
                         color: 'var(--rose)'
                       }}
-                      onClick={() => handleDelete(w)}
+                      onClick={() => setDeleteTarget(w)}
                       aria-label={`${w.text}を削除`}
                     >
                       削除
@@ -169,6 +179,36 @@ export default function WishList() {
           )
         })
       )}
+
+      <AccessibleDialog
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        title="やってみたいことを削除しますか？"
+        description={
+          deleteTarget
+            ? `「${deleteTarget.text}」をリストから削除します。`
+            : undefined
+        }
+        initialFocusRef={cancelRef}
+      >
+        <div className="btn-row" style={{ marginTop: '1.2rem' }}>
+          <button
+            ref={cancelRef}
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => setDeleteTarget(null)}
+          >
+            キャンセル
+          </button>
+          <button
+            type="button"
+            className="btn btn-danger"
+            onClick={handleConfirmDelete}
+          >
+            削除する
+          </button>
+        </div>
+      </AccessibleDialog>
     </div>
   )
 }

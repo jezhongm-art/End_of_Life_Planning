@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
-import { ITEMS } from '../../memberB/items'
-import { computeAnalysisFromAnswers } from '../../memberC/rules'
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react'
+import { ITEMS, STATE } from '../../memberB/items'
+import { computeAnalysisFromAnswers, computeQuizFlow, pruneAnswersToFlow } from '../../memberC/rules'
 
 const STORAGE_KEY = 'shukatsu_michishirube_react_v1'
 
@@ -36,21 +36,10 @@ export function defaultState() {
     quizAnswers: {},
     quizDone: false,
     analysis: null,
-    wishes: [
-      { id: 'w1', text: '家族みんなで食事やお祝いをする', done: false }
-    ],
-    rewardWishId: 'w1',
+    wishes: [],
+    rewardWishId: null,
     memos: [],
-    talkLogs: [
-      {
-        id: 't1',
-        date: '2026年11月5日',
-        partner: '結子（娘）',
-        decided: '緊急の連絡先は長女にする',
-        pending: 'お墓のことは来月もう一度話す',
-        memo: 'まずは通帳の場所から整理していくことになった。'
-      }
-    ],
+    talkLogs: [],
     rewardConsult: {
       status: 'none',
       wishText: '',
@@ -76,10 +65,13 @@ export function sampleState() {
     q_money_1: 2,
     q_money_2: 0,
     q_medical_1: 0,
-    q_house_1: 0,
+    q_house_type: 0,
     q_house_own: 1,
     q_grave_1: 1,
-    q_grave_2: 1
+    q_grave_2: 1,
+    q_family_1: 1,
+    q_family_2: 1,
+    q_pet_1: 2
   }
   s.quizDone = true
   s.wishes = [
@@ -87,6 +79,16 @@ export function sampleState() {
     { id: 'w2', text: '家族みんなで食事やお祝いをする', done: false }
   ]
   s.rewardWishId = 'w1'
+  s.talkLogs = [
+    {
+      id: 't1',
+      date: '2026年11月5日',
+      partner: '結子（娘・サンプル）',
+      decided: '緊急の連絡先は長女にする',
+      pending: 'お墓のことは来月もう一度話す',
+      memo: 'まずは通帳の場所から整理していくことになった。'
+    }
+  ]
   s.rewardConsult = {
     status: 'pending',
     wishText: '温泉旅行にゆっくり行く',
@@ -97,29 +99,78 @@ export function sampleState() {
   return s
 }
 
-export function AppProvider({ children }) {
-  const [state, setState] = useState(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (raw) {
-        const parsed = JSON.parse(raw)
-        return { ...defaultState(), ...parsed }
+function normalizeLoadedState(parsed) {
+  const base = defaultState()
+  const merged = { ...base, ...parsed }
+  const normalizedItems = makeBlankItems()
+  ITEMS.forEach((it) => {
+    const saved = parsed?.items?.[it.id]
+    if (saved) {
+      normalizedItems[it.id] = {
+        state: STATE[saved.state] ? saved.state : 'notyet',
+        done: it.steps.map((_, idx) => Boolean(saved.done?.[idx]))
       }
-    } catch (e) {
-      console.warn('Failed to load localStorage', e)
     }
-    return defaultState()
   })
+  merged.items = normalizedItems
+  merged.wishes = Array.isArray(parsed?.wishes) ? parsed.wishes : base.wishes
+  merged.memos = Array.isArray(parsed?.memos) ? parsed.memos : base.memos
+  merged.talkLogs = Array.isArray(parsed?.talkLogs) ? parsed.talkLogs : base.talkLogs
+  merged.quizAnswers = parsed?.quizAnswers && typeof parsed.quizAnswers === 'object' ? parsed.quizAnswers : {}
+  merged.rewardConsult = { ...base.rewardConsult, ...(parsed?.rewardConsult || {}) }
+  return merged
+}
 
-  const [toastMessage, setToastMessage] = useState(null)
+function classifyStorageError(err) {
+  const isQuota =
+    err?.name === 'QuotaExceededError' ||
+    err?.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+    err?.code === 22 ||
+    err?.code === 1014
 
-  // Sync to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
-    } catch (e) {
-      console.warn('Failed to save to localStorage', e)
+  if (isQuota) {
+    return {
+      type: 'quota',
+      message:
+        '端末の保存容量がいっぱいのため、変更を保存できませんでした。不要な写真や記録を削除してから、もう一度お試しください。'
     }
+  }
+  return {
+    type: 'storage',
+    message:
+      'ブラウザへの保存に失敗しました。プライベートブラウズや保存制限が有効な場合は変更が保持されないため、必要に応じて内容を控えてください。'
+  }
+}
+
+function readInitialState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      return { state: normalizeLoadedState(parsed), loadError: null }
+    }
+  } catch (e) {
+    console.warn('Failed to load localStorage', e)
+    return {
+      state: defaultState(),
+      loadError: '保存データの読み込みに失敗したため、初期状態で表示しています。'
+    }
+  }
+  return { state: defaultState(), loadError: null }
+}
+
+export function AppProvider({ children }) {
+  const [initial] = useState(() => readInitialState())
+  const [loadError, setLoadError] = useState(initial.loadError)
+  const [state, setState] = useState(initial.state)
+
+  const latestStateRef = useRef(state)
+  const [saveError, setSaveError] = useState(null)
+  const [toastMessage, setToastMessage] = useState(null)
+  const toastTimerRef = useRef(null)
+
+  useEffect(() => {
+    latestStateRef.current = state
   }, [state])
 
   // Apply data-ts on html
@@ -127,37 +178,93 @@ export function AppProvider({ children }) {
     document.documentElement.setAttribute('data-ts', state.textSize || '2')
   }, [state.textSize])
 
-  const toast = (msg) => {
+  const toast = useCallback((msg) => {
     setToastMessage(msg)
-    setTimeout(() => {
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current)
+    }
+    toastTimerRef.current = setTimeout(() => {
       setToastMessage((current) => (current === msg ? null : current))
-    }, 2500)
+    }, 2800)
+  }, [])
+
+  const persistState = useCallback((nextState) => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState))
+      setSaveError(null)
+      return true
+    } catch (e) {
+      console.warn('Failed to save to localStorage', e)
+      const errInfo = classifyStorageError(e)
+      setSaveError(errInfo)
+      return false
+    }
+  }, [])
+
+  const commitState = useCallback(
+    (updater, options = {}) => {
+      const { successMessage, abortOnSaveError = false } = options
+      const prev = latestStateRef.current
+      const nextState = typeof updater === 'function' ? updater(prev) : updater
+      const ok = persistState(nextState)
+
+      if (!ok && abortOnSaveError) {
+        toast('保存に失敗しました。画面上部のエラー案内をご確認ください。')
+        return false
+      }
+
+      latestStateRef.current = nextState
+      setState(nextState)
+
+      if (ok && successMessage) {
+        toast(successMessage)
+      } else if (!ok) {
+        toast('保存に失敗しました。画面上部のエラー案内をご確認ください。')
+      }
+      return ok
+    },
+    [persistState, toast]
+  )
+
+  const clearSaveError = () => setSaveError(null)
+  const clearLoadError = () => setLoadError(null)
+
+  const retrySave = () => {
+    const ok = persistState(latestStateRef.current)
+    if (ok) {
+      toast('保存に成功しました')
+    } else {
+      toast('再保存に失敗しました。容量または設定をご確認ください。')
+    }
+    return ok
   }
 
   const updateItemStatus = (itemId, newState) => {
-    setState((prev) => {
-      const currentItem = prev.items[itemId] || { state: 'notyet', done: [] }
-      return {
-        ...prev,
-        items: {
-          ...prev.items,
-          [itemId]: {
-            ...currentItem,
-            state: newState
+    const label = STATE[newState]?.t || newState
+    return commitState(
+      (prev) => {
+        const currentItem = prev.items[itemId] || { state: 'notyet', done: [] }
+        return {
+          ...prev,
+          items: {
+            ...prev.items,
+            [itemId]: {
+              ...currentItem,
+              state: newState
+            }
           }
         }
-      }
-    })
-    toast(`状態を「${newState}」に更新しました`)
+      },
+      { successMessage: `状態を「${label}」に更新しました` }
+    )
   }
 
   const toggleItemStep = (itemId, stepIndex) => {
-    setState((prev) => {
+    return commitState((prev) => {
       const currentItem = prev.items[itemId] || { state: 'notyet', done: [] }
       const newDone = [...(currentItem.done || [])]
       newDone[stepIndex] = !newDone[stepIndex]
 
-      // 自動で準備中や完了に更新するスマートサポート
       let autoState = currentItem.state
       const allDone = newDone.length > 0 && newDone.every(Boolean)
       const someDone = newDone.some(Boolean)
@@ -183,52 +290,85 @@ export function AppProvider({ children }) {
   }
 
   const setItemPriority = (itemId) => {
-    setState((prev) => ({
-      ...prev,
-      priority: itemId
-    }))
-    toast('「次の一歩」に設定しました')
+    return commitState(
+      (prev) => ({
+        ...prev,
+        priority: itemId
+      }),
+      { successMessage: '「次にすること」に設定しました' }
+    )
   }
 
-  const updateSettings = (partial) => {
-    setState((prev) => ({
-      ...prev,
-      ...partial
-    }))
+  const updateSettings = (partial, successMessage) => {
+    return commitState(
+      (prev) => ({
+        ...prev,
+        ...partial
+      }),
+      { successMessage }
+    )
   }
 
   const setTextSize = (ts) => {
-    setState((prev) => ({ ...prev, textSize: ts }))
-    toast(`文字サイズを変更しました`)
+    return commitState(
+      (prev) => ({ ...prev, textSize: ts }),
+      { successMessage: '文字サイズを変更しました' }
+    )
   }
 
   const cycleTextSize = () => {
-    setState((prev) => {
-      const next = prev.textSize === '1' ? '2' : prev.textSize === '2' ? '3' : '1'
-      return { ...prev, textSize: next }
-    })
+    const labels = { '1': '標準', '2': '大きめ', '3': '特大' }
+    const next = latestStateRef.current.textSize === '1' ? '2' : latestStateRef.current.textSize === '2' ? '3' : '1'
+    return commitState(
+      (prev) => ({ ...prev, textSize: next }),
+      { successMessage: `文字サイズを「${labels[next]}」に変更しました` }
+    )
   }
 
   const updateTopics = (topics) => {
-    setState((prev) => ({ ...prev, topics }))
+    return commitState((prev) => ({ ...prev, topics }))
+  }
+
+  const saveQuizProgress = (answers) => {
+    return commitState((prev) => {
+      const { answers: validAnswers } = pruneAnswersToFlow(answers)
+      return {
+        ...prev,
+        quizAnswers: validAnswers,
+        quizDone: false
+      }
+    })
   }
 
   const saveQuizAnswer = (qId, optIdx) => {
-    setState((prev) => {
-      const newAnswers = { ...prev.quizAnswers, [qId]: optIdx }
+    return commitState((prev) => {
+      const merged = { ...prev.quizAnswers, [qId]: optIdx }
+      const { answers: validAnswers } = pruneAnswersToFlow(merged)
       return {
         ...prev,
-        quizAnswers: newAnswers
+        quizAnswers: validAnswers
+      }
+    })
+  }
+
+  const previewPartialQuiz = (answers) => {
+    return commitState((prev) => {
+      const { answers: validAnswers } = pruneAnswersToFlow(answers || prev.quizAnswers)
+      const analysis = computeAnalysisFromAnswers(validAnswers, prev.items, { isPartial: true })
+      return {
+        ...prev,
+        quizAnswers: validAnswers,
+        quizDone: false,
+        analysis
       }
     })
   }
 
   const finishQuiz = (answers) => {
-    setState((prev) => {
-      const finalAnswers = answers || prev.quizAnswers
-      const analysis = computeAnalysisFromAnswers(finalAnswers, prev.items)
+    return commitState((prev) => {
+      const { answers: validAnswers } = pruneAnswersToFlow(answers || prev.quizAnswers)
+      const analysis = computeAnalysisFromAnswers(validAnswers, prev.items, { isPartial: false })
 
-      // 新しく見つかった項目を自動で「未着手」などに更新
       const newItems = { ...prev.items }
       analysis.newly.forEach((n) => {
         if (!newItems[n.id] || newItems[n.id].state === 'notyet') {
@@ -238,7 +378,7 @@ export function AppProvider({ children }) {
 
       return {
         ...prev,
-        quizAnswers: finalAnswers,
+        quizAnswers: validAnswers,
         quizDone: true,
         analysis,
         items: newItems
@@ -247,13 +387,30 @@ export function AppProvider({ children }) {
   }
 
   const resetQuiz = () => {
-    setState((prev) => ({
-      ...prev,
-      quizAnswers: {},
-      quizDone: false,
-      analysis: null
-    }))
-    toast('アンケート回答を初期化しました')
+    return commitState(
+      (prev) => ({
+        ...prev,
+        quizAnswers: {},
+        quizDone: false,
+        analysis: null
+      }),
+      { successMessage: 'アンケート回答を初期化しました' }
+    )
+  }
+
+  const getQuizStatus = () => {
+    const flow = computeQuizFlow(state.quizAnswers)
+    const answeredCount = flow.filter((qId) => state.quizAnswers[qId] !== undefined).length
+    const isCompleted = Boolean(state.quizDone)
+    const isInProgress = !isCompleted && answeredCount > 0
+    return {
+      flow,
+      totalCount: flow.length,
+      answeredCount,
+      remainingCount: Math.max(0, flow.length - answeredCount),
+      isCompleted,
+      isInProgress
+    }
   }
 
   const addWish = (text) => {
@@ -262,42 +419,47 @@ export function AppProvider({ children }) {
       text,
       done: false
     }
-    setState((prev) => ({
-      ...prev,
-      wishes: [newWish, ...prev.wishes]
-    }))
-    toast('やってみたいことを登録しました')
+    return commitState(
+      (prev) => ({
+        ...prev,
+        wishes: [newWish, ...prev.wishes]
+      }),
+      { successMessage: 'やってみたいことを登録しました', abortOnSaveError: true }
+    )
   }
 
   const toggleWish = (wishId) => {
-    setState((prev) => {
-      const target = prev.wishes.find((w) => w.id === wishId)
-      const nextDone = !target?.done
-      if (nextDone && target?.text) {
-        toast(`「${target.text}」を達成しました！`)
-      }
-      return {
+    const target = latestStateRef.current.wishes.find((w) => w.id === wishId)
+    const nextDone = !target?.done
+    const msg = nextDone && target?.text ? `「${target.text}」を達成しました！` : undefined
+    return commitState(
+      (prev) => ({
         ...prev,
         wishes: prev.wishes.map((w) => (w.id === wishId ? { ...w, done: nextDone } : w))
-      }
-    })
+      }),
+      { successMessage: msg }
+    )
   }
 
   const deleteWish = (wishId) => {
-    setState((prev) => ({
-      ...prev,
-      wishes: prev.wishes.filter((w) => w.id !== wishId),
-      rewardWishId: prev.rewardWishId === wishId ? null : prev.rewardWishId
-    }))
-    toast('やってみたいことを削除しました')
+    return commitState(
+      (prev) => ({
+        ...prev,
+        wishes: prev.wishes.filter((w) => w.id !== wishId),
+        rewardWishId: prev.rewardWishId === wishId ? null : prev.rewardWishId
+      }),
+      { successMessage: 'やってみたいことを削除しました' }
+    )
   }
 
   const setRewardWish = (wishId) => {
-    setState((prev) => ({
-      ...prev,
-      rewardWishId: wishId
-    }))
-    toast('ごほうび目標に設定しました')
+    return commitState(
+      (prev) => ({
+        ...prev,
+        rewardWishId: wishId
+      }),
+      { successMessage: 'ごほうび目標に設定しました' }
+    )
   }
 
   const addMemo = ({ cat, title, text, tag, image }) => {
@@ -310,27 +472,33 @@ export function AppProvider({ children }) {
       date: new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' }),
       tag: tag || ''
     }
-    setState((prev) => ({
-      ...prev,
-      memos: [newMemo, ...prev.memos]
-    }))
-    toast('思い出を保存しました')
+    return commitState(
+      (prev) => ({
+        ...prev,
+        memos: [newMemo, ...prev.memos]
+      }),
+      { successMessage: '思い出を保存しました', abortOnSaveError: true }
+    )
   }
 
   const updateMemo = (id, partial) => {
-    setState((prev) => ({
-      ...prev,
-      memos: prev.memos.map((m) => (m.id === id ? { ...m, ...partial } : m))
-    }))
-    toast('思い出を更新しました')
+    return commitState(
+      (prev) => ({
+        ...prev,
+        memos: prev.memos.map((m) => (m.id === id ? { ...m, ...partial } : m))
+      }),
+      { successMessage: '思い出を更新しました', abortOnSaveError: true }
+    )
   }
 
   const deleteMemo = (id) => {
-    setState((prev) => ({
-      ...prev,
-      memos: prev.memos.filter((m) => m.id !== id)
-    }))
-    toast('思い出を削除しました')
+    return commitState(
+      (prev) => ({
+        ...prev,
+        memos: prev.memos.filter((m) => m.id !== id)
+      }),
+      { successMessage: '思い出を削除しました' }
+    )
   }
 
   const addTalkLog = ({ partner, decided, pending, memo }) => {
@@ -342,15 +510,27 @@ export function AppProvider({ children }) {
       pending,
       memo
     }
-    setState((prev) => ({
-      ...prev,
-      talkLogs: [newLog, ...prev.talkLogs]
-    }))
-    toast('話し合いを記録しました')
+    return commitState(
+      (prev) => ({
+        ...prev,
+        talkLogs: [newLog, ...prev.talkLogs]
+      }),
+      { successMessage: '話し合いを記録しました', abortOnSaveError: true }
+    )
+  }
+
+  const deleteTalkLog = (id) => {
+    return commitState(
+      (prev) => ({
+        ...prev,
+        talkLogs: prev.talkLogs.filter((t) => t.id !== id)
+      }),
+      { successMessage: '話し合いの記録を削除しました' }
+    )
   }
 
   const updateRewardConsult = (partial) => {
-    setState((prev) => ({
+    return commitState((prev) => ({
       ...prev,
       rewardConsult: { ...prev.rewardConsult, ...partial }
     }))
@@ -358,21 +538,24 @@ export function AppProvider({ children }) {
 
   const loadBlankPreset = () => {
     const blank = defaultState()
-    setState(blank)
-    toast('初期（未開始）状態にリセットしました')
+    return commitState(blank, { successMessage: '初期（未開始）状態にリセットしました' })
   }
 
   const loadSamplePreset = () => {
     const sample = sampleState()
-    setState(sample)
-    toast('サンプルデータを読み込みました')
+    return commitState(sample, { successMessage: 'サンプルデータを読み込みました' })
   }
 
   const resetAllData = () => {
     try {
       localStorage.removeItem(STORAGE_KEY)
-    } catch (e) {}
-    setState(defaultState())
+      setSaveError(null)
+    } catch (e) {
+      setSaveError(classifyStorageError(e))
+    }
+    const blank = defaultState()
+    latestStateRef.current = blank
+    setState(blank)
     toast('すべての保存データを削除しました')
   }
 
@@ -414,7 +597,13 @@ export function AppProvider({ children }) {
 
   const value = {
     state,
+    saveError,
+    loadError,
+    clearSaveError,
+    clearLoadError,
+    retrySave,
     calcProgress,
+    getQuizStatus,
     updateItemStatus,
     toggleItemStep,
     setItemPriority,
@@ -422,7 +611,9 @@ export function AppProvider({ children }) {
     setTextSize,
     cycleTextSize,
     updateTopics,
+    saveQuizProgress,
     saveQuizAnswer,
+    previewPartialQuiz,
     finishQuiz,
     resetQuiz,
     addWish,
@@ -433,6 +624,7 @@ export function AppProvider({ children }) {
     updateMemo,
     deleteMemo,
     addTalkLog,
+    deleteTalkLog,
     updateRewardConsult,
     loadBlankPreset,
     loadSamplePreset,
@@ -443,7 +635,11 @@ export function AppProvider({ children }) {
   return (
     <AppContext.Provider value={value}>
       {children}
-      {toastMessage && <div className="toast">{toastMessage}</div>}
+      {toastMessage && (
+        <div className="toast" role="status" aria-live="polite">
+          {toastMessage}
+        </div>
+      )}
     </AppContext.Provider>
   )
 }
