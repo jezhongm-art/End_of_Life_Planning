@@ -39,7 +39,7 @@ export default function SurveyTopics() {
       {/* シンプルな導入 */}
       <div className="plain-head">
         <p className="plain-lead" style={{ marginTop: 0 }}>
-          お答えに合わせて質問が変わり、いま必要な準備がわかります（{QUIZ_FLOW_RANGE.min}〜{QUIZ_FLOW_RANGE.max}問・約3〜4分）。
+          お答えに合わせて質問が変わり、いま必要な準備がわかります（{QUIZ_FLOW_RANGE.min}〜{QUIZ_FLOW_RANGE.max}問・約4〜5分）。
         </p>
       </div>
 
@@ -153,7 +153,7 @@ export default function SurveyTopics() {
             }}
             onClick={handleStartOrResume}
           >
-            アンケートを始める（約3〜4分）
+            アンケートを始める（約4〜5分）
           </button>
 
           <p style={{ textAlign: 'center', fontSize: '.84rem', color: 'var(--muted)', marginTop: '.65rem' }}>

@@ -1,18 +1,19 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useApp } from '../shared/context/AppContext'
 import { ITEMS } from '../memberB/items'
-import { computeAnalysisFromAnswers, pickPriorityItem } from '../memberC/rules'
+import { pickPriorityItem, resolveLatestAnalysis } from '../memberC/rules'
 import { StatusBadge } from '../memberB/StatusBadge'
 import { Icon } from '../shared/components/SvgIcons'
 
 export default function SurveyResult() {
   const { state, getQuizStatus, setItemPriority } = useApp()
+  const [showAllNewly, setShowAllNewly] = useState(false)
 
   const quizStatus = getQuizStatus()
-  const hasSurveyOutput = state.quizDone || state.quizPreview || !!state.analysis
+  const analysis = resolveLatestAnalysis(state)
 
-  if (!hasSurveyOutput) {
+  if (!analysis) {
     return (
       <div className="screen-anim">
         <div className="empty">
@@ -27,12 +28,6 @@ export default function SurveyResult() {
       </div>
     )
   }
-
-  // 最新の項目状態とルールを使って常に再計算する
-  const analysis =
-    Object.keys(state.quizAnswers || {}).length > 0
-      ? computeAnalysisFromAnswers(state.quizAnswers, state.items, { isPartial: !state.quizDone })
-      : state.analysis
 
   const newlyItems = (analysis?.newly || []).map((n) => {
     const item = ITEMS.find((it) => it.id === n.id)
@@ -59,6 +54,9 @@ export default function SurveyResult() {
   const handleSetPriority = (id) => {
     setItemPriority(id)
   }
+
+  const visibleNewly = showAllNewly ? newlyItems : newlyItems.slice(0, 3)
+  const hiddenNewlyCount = Math.max(0, newlyItems.length - 3)
 
   return (
     <div className="screen-anim">
@@ -136,7 +134,7 @@ export default function SurveyResult() {
         </section>
       )}
 
-      {/* 新しく見つかった準備 */}
+      {/* 新しく見つかった準備（最初は上位3件までに制限） */}
       <h3 className="sec-title">確認をおすすめする項目（{newlyItems.length}件）</h3>
       {newlyItems.length === 0 ? (
         <div className="card" style={{ marginTop: '.6rem', background: 'var(--surface-2)' }}>
@@ -148,25 +146,81 @@ export default function SurveyResult() {
           </p>
         </div>
       ) : (
-        newlyItems.map(({ item, reason }) => {
-          const itemState = state.items[item.id]?.state || 'notyet'
-          return (
-            <Link
-              key={item.id}
-              to={`/items/detail?id=${item.id}`}
-              className="rowitem"
-            >
-              <div className="r-main">
-                <span className="r-title">{item.title}</span>
-                <span className="r-sub">{reason}</span>
-                <div style={{ marginTop: '.4rem' }}>
-                  <StatusBadge state={itemState} />
+        <>
+          {visibleNewly.map(({ item, reason }) => {
+            const itemState = state.items[item.id]?.state || 'notyet'
+            return (
+              <Link
+                key={item.id}
+                to={`/items/detail?id=${item.id}`}
+                className="rowitem"
+              >
+                <div className="r-main">
+                  <span className="r-title">{item.title}</span>
+                  <span className="r-sub">{reason}</span>
+                  <div style={{ marginTop: '.4rem' }}>
+                    <StatusBadge state={itemState} />
+                  </div>
                 </div>
+                <Icon name="chev" stroke className="chev" />
+              </Link>
+            )
+          })}
+          {newlyItems.length > 3 && (
+            <button
+              type="button"
+              className="btn btn-sub btn-block"
+              style={{ marginTop: '.75rem' }}
+              onClick={() => setShowAllNewly((prev) => !prev)}
+            >
+              {showAllNewly
+                ? '上位3件だけの表示に戻す'
+                : `他のおすすめ項目を見る（残り${hiddenNewlyCount}件）`}
+            </button>
+          )}
+        </>
+      )}
+
+      {/* おひとり・頼れる家族がいない場合の公的相談窓口 */}
+      {analysis?.needsSoloSupport && (
+        <section
+          className="card"
+          style={{ marginTop: '1.1rem', borderColor: '#c4ddf0', background: '#f7fbfe' }}
+          aria-label="おひとり・頼れる家族がいない場合の相談窓口"
+        >
+          <h3 className="card-title" style={{ fontSize: '1.02rem' }}>
+            おひとりで進めるときの公的相談窓口
+          </h3>
+          <p className="card-sub">
+            頼れるご家族が近くにいない場合でも、地域の窓口へ早めに相談しておくと、緊急時や手続きの備えを一緒に整えられます。お住まいの自治体の福祉・高齢者支援窓口もあわせてご活用ください。
+          </p>
+          <div style={{ marginTop: '.6rem' }}>
+            <a
+              href="https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/hukushi_kaigo/kaigo_koureisha/chiiki-houkatsu/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="linkrow"
+            >
+              <div>
+                <span className="lr-t">地域包括支援センター（お住まいの市区町村窓口）</span>
+                <span className="lr-s">高齢者の暮らし・介護・見守り・生活支援の総合相談</span>
               </div>
               <Icon name="chev" stroke className="chev" />
-            </Link>
-          )
-        })
+            </a>
+            <a
+              href="https://www.houterasu.or.jp/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="linkrow"
+            >
+              <div>
+                <span className="lr-t">法テラス（日本司法支援センター）</span>
+                <span className="lr-s">遺言書・任意後見・死後事務委任などの法律相談案内</span>
+              </div>
+              <Icon name="chev" stroke className="chev" />
+            </a>
+          </div>
+        </section>
       )}
 
       {/* 中立的な状態の項目（今はひとりで整理したい等） */}

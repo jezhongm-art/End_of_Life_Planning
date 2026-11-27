@@ -8,6 +8,7 @@ import {
   computeQuizFlow,
   computeQuizProgress,
   findOrphanedAnswerIds,
+  getItemSurveyRecommendation,
   pickPriorityItem,
   pruneAnswersToFlow,
   resolveAnswerOption
@@ -31,10 +32,21 @@ test('すべての選択肢に明示的な重複しない value が定義され�
   })
 })
 
-test('アンケート分岐：明示的な value と next に基づいて正しく分岐する', () => {
+test('準備項目は12項目あり、すべて4手順ずつ用意されている', () => {
+  assert.equal(ITEMS.length, 12)
+  const ids = ITEMS.map((it) => it.id)
+  assert.ok(ids.includes('contacts'))
+  assert.ok(ids.includes('will'))
+  assert.ok(ids.includes('belongings'))
+  ITEMS.forEach((it) => {
+    assert.equal(it.steps.length, 4, `${it.id} の手順数は4つであるべき`)
+  })
+})
+
+test('アンケート分岐：明示的な value と next に基づいて12〜24問へ正しく分岐する', () => {
   const baseFlow = computeQuizFlow({})
   assert.deepEqual(baseFlow, BASE_QUIZ_SEQUENCE)
-  assert.equal(baseFlow.length, 9)
+  assert.equal(baseFlow.length, 12)
 
   // 保険未加入 -> 年金質問へ分岐（保険・年金全体を確認済みにしない）
   const pensionFlow = computeQuizFlow({ q_insurance_1: 'no_insurance' })
@@ -44,21 +56,37 @@ test('アンケート分岐：明示的な value と next に基づいて正し�
   const facilityFlow = computeQuizFlow({ q_house_type: 'family_or_facility' })
   assert.ok(facilityFlow.includes('q_house_other'))
 
-  // デジタル利用 -> 契約メモ質問へ分岐
+  // デジタル利用・通話中心それぞれの深掘り質問
   const digitalFlow = computeQuizFlow({ q_digital_1: 'using' })
   assert.ok(digitalFlow.includes('q_digital_2'))
+  const minimalPhoneFlow = computeQuizFlow({ q_digital_1: 'minimal' })
+  assert.ok(minimalPhoneFlow.includes('q_digital_phone'))
 
-  // 最大分岐数（16問）
+  // お墓が「まだ考えていない」の場合はノート記載ではなく悩み質問（q_grave_3）へ分岐する
+  const graveUndecidedFlow = computeQuizFlow({ q_grave_1: 'undecided' })
+  assert.ok(graveUndecidedFlow.includes('q_grave_3'))
+  assert.ok(!graveUndecidedFlow.includes('q_grave_2'))
+
+  // おひとり分岐（q_family_2: 'alone' -> 'q_family_solo'）
+  const soloFlow = computeQuizFlow({ q_family_2: 'alone' })
+  assert.ok(soloFlow.includes('q_family_solo'))
+
+  // 最大分岐数（24問）
   const maxFlow = computeQuizFlow({
+    q_contacts_1: 'not_listed',
+    q_medical_1: 'undecided',
     q_money_1: 'not_shared',
+    q_house_type: 'own_home',
     q_insurance_1: 'no_insurance',
     q_digital_1: 'using',
-    q_medical_1: 'undecided',
-    q_house_type: 'own_home',
+    q_will_1: 'undecided',
+    q_family_1: 'in_progress',
+    q_family_2: 'alone',
     q_grave_1: 'undecided',
+    q_belongings_1: 'not_started',
     q_pet_1: 'undecided'
   })
-  assert.equal(maxFlow.length, 16)
+  assert.equal(maxFlow.length, 24)
 })
 
 test('分岐で質問数が増えても進捗率（%）が下がらない', () => {
@@ -67,21 +95,29 @@ test('分岐で質問数が増えても進捗率（%）が下がらない', () =
   assert.equal(prevPct, 0)
 
   const branchChoices = [
-    ['q_money_1', 'partial'],       // 分岐追加 (+1)
-    ['q_money_2', 'not_listed'],
-    ['q_insurance_1', 'no_insurance'], // 分岐追加 (+1)
-    ['q_pension_1', 'not_confirmed'],
-    ['q_digital_1', 'using'],       // 分岐追加 (+1)
-    ['q_digital_2', 'not_noted'],
-    ['q_medical_1', 'undecided'],   // 分岐追加 (+1)
+    ['q_contacts_1', 'not_listed'],
+    ['q_contacts_2', 'alone'],
+    ['q_medical_1', 'undecided'],
     ['q_medical_2', 'not_consulted'],
-    ['q_house_type', 'family_or_facility'], // 分岐追加 (+1)
+    ['q_money_1', 'partial'],
+    ['q_money_2', 'not_listed'],
+    ['q_house_type', 'family_or_facility'],
     ['q_house_other', 'needs_check'],
-    ['q_grave_1', 'undecided'],     // 分岐追加 (+1)
-    ['q_grave_2', 'not_written'],
+    ['q_insurance_1', 'no_insurance'],
+    ['q_pension_1', 'not_confirmed'],
+    ['q_digital_1', 'using'],
+    ['q_digital_2', 'not_noted'],
+    ['q_will_1', 'undecided'],
+    ['q_will_2', 'does_not_know'],
     ['q_family_1', 'in_progress'],
-    ['q_family_2', 'solo'],
-    ['q_pet_1', 'undecided'],       // 分岐追加 (+1)
+    ['q_note_2', 'not_ready'],
+    ['q_family_2', 'alone'],
+    ['q_family_solo', 'not_connected'],
+    ['q_grave_1', 'undecided'],
+    ['q_grave_3', 'no_successor'],
+    ['q_belongings_1', 'not_started'],
+    ['q_belongings_2', 'not_noted'],
+    ['q_pet_1', 'undecided'],
     ['q_pet_2', 'not_noted']
   ]
 
@@ -117,11 +153,12 @@ test('分岐変更で流れから外れた回答は自動消去されず検出�
 
 test('途中保存の再開位置が未回答の先頭質問になる', () => {
   const partialAnswers = {
-    q_money_1: 'shared',
-    q_insurance_1: 'confirmed'
+    q_contacts_1: 'organized',
+    q_medical_1: 'shared',
+    q_money_1: 'shared'
   }
   const { flow, resumeIndex } = getQuizResumeIndex(partialAnswers)
-  assert.equal(flow[resumeIndex], 'q_digital_1')
+  assert.equal(flow[resumeIndex], 'q_house_type')
 })
 
 test('結果分類：「今はひとりで整理したい」は中立扱い、「保険なし」は年金確認に分岐する', () => {
@@ -253,4 +290,38 @@ test('保存済み回答の移行とアプリ更新時の診断結果再計算�
   assert.ok(migrated.analysis.neutral.some((n) => n.id === 'family'))
   assert.ok(!migrated.analysis.known.some((k) => k.id === 'family'))
   assert.ok(resolveAnswerOption('q_money_1', migrated.quizAnswers.q_money_1)?.value === 'not_shared')
+})
+
+test('緊急度×未整理度スコアで優先順位が決まり、複数質問の理由が上書きされず統合される', () => {
+  const items = makeBlankItems()
+  const analysis = computeAnalysisFromAnswers(
+    {
+      q_belongings_1: 'not_started',
+      q_belongings_2: 'not_noted',
+      q_contacts_1: 'not_listed',
+      q_contacts_2: 'alone',
+      q_money_1: 'not_shared',
+      q_money_2: 'not_listed'
+    },
+    items
+  )
+
+  const orderedIds = analysis.newly.map((n) => n.id)
+  assert.equal(orderedIds[0], 'contacts', '緊急度の高い連絡先が最上位になるべき')
+  assert.ok(
+    orderedIds.indexOf('money') < orderedIds.indexOf('belongings'),
+    '遺産・財産の整理は思い出の品整理より優先されるべき'
+  )
+
+  const moneyEntry = analysis.newly.find((n) => n.id === 'money')
+  assert.ok(moneyEntry.reason.includes('通帳や書類の場所が伝わっていないため'), 'q_money_1 の理由が残ること')
+  assert.ok(moneyEntry.reason.includes('銀行名や返済中の契約だけでもメモ'), 'q_money_2 の理由も統合されること')
+  assert.equal(analysis.needsSoloSupport, true, 'q_contacts_2: alone で公的相談窓口フラグが立つ')
+
+  const rec = getItemSurveyRecommendation({ quizDone: true, quizAnswers: { q_money_1: 'not_shared' }, items }, 'money')
+  assert.ok(rec?.reason.length > 0)
+
+  items.money = { state: 'done', done: [true, true, true, true] }
+  const recAfterDone = getItemSurveyRecommendation({ quizDone: true, quizAnswers: { q_money_1: 'not_shared' }, items }, 'money')
+  assert.equal(recAfterDone, null)
 })

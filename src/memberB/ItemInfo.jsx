@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { useApp } from '../shared/context/AppContext'
 import { ITEMS, TOPICS, STATE } from './items'
+import { getItemSurveyRecommendation } from '../memberC/rules'
 import { StatusBadge, StatusPicker } from './StatusBadge'
 import { Icon } from '../shared/components/SvgIcons'
 import { AccessibleDialog } from '../shared/components/AccessibleDialog'
@@ -15,6 +16,7 @@ export default function ItemInfo() {
   const syncCancelRef = useRef(null)
 
   const item = ITEMS.find((it) => it.id === itemId) || ITEMS[0]
+  const recommendation = getItemSurveyRecommendation(state, item.id)
   const currentItemState = state.items[item.id]?.state || 'notyet'
   const currentItemDone = state.items[item.id]?.done || []
   const doneStepsCount = currentItemDone.filter(Boolean).length
@@ -72,6 +74,19 @@ export default function ItemInfo() {
           <StatusBadge state={currentItemState} />
         </div>
         <h2 className="plain-title">{item.title}</h2>
+        {recommendation?.reason && (
+          <p
+            style={{
+              marginTop: '.35rem',
+              fontSize: '.88rem',
+              fontWeight: 700,
+              color: 'var(--brand-deep)',
+              lineHeight: 1.55
+            }}
+          >
+            おすすめ理由：{recommendation.reason}
+          </p>
+        )}
       </div>
 
       {!isPriority && currentItemState !== 'done' && (

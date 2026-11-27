@@ -1,11 +1,29 @@
 import { ITEMS } from '../memberB/items.js'
 import { BASE_QUIZ_SEQUENCE, QUIZ_NODES } from './questions.js'
 
-export const RULES_VERSION = '2026-11-25-v2'
+export const RULES_VERSION = '2026-11-27-v3'
 
 export const QUIZ_FLOW_RANGE = {
   min: BASE_QUIZ_SEQUENCE.length,
-  max: 16
+  max: BASE_QUIZ_SEQUENCE.length * 2
+}
+
+/**
+ * 万が一の際にすぐ困る緊急度・重要度の基準スコア
+ */
+export const ITEM_URGENCY_SCORE = {
+  contacts: 100,
+  medical: 95,
+  money: 90,
+  house: 85,
+  insurance: 80,
+  digital: 75,
+  will: 70,
+  note: 65,
+  pet: 62,
+  family: 60,
+  grave: 55,
+  belongings: 50
 }
 
 /**
@@ -43,7 +61,7 @@ export function migrateQuizAnswers(rawAnswers = {}) {
   return migrated
 }
 
-/* ---------- アンケートフロー構築（明示的な value と next による分岐フロー） ---------- */
+/* ---------- アンケートフロー構築（12項目の基本＋条件付き深掘り） ---------- */
 export function computeQuizFlow(answers = {}) {
   const flow = []
 
@@ -84,7 +102,7 @@ export function pruneAnswersToFlow(answers = {}) {
 
 /**
  * 分岐による質問数の増減で進捗率が下がらないよう、
- * 9つの基本質問グループ単位で完了度を計算する単調増加の進捗率
+ * 12の基本質問グループ単位で完了度を計算する単調増加の進捗率
  */
 export function computeQuizProgress(answers = {}, flowOverride = null) {
   const flow = flowOverride || computeQuizFlow(answers)
@@ -112,23 +130,39 @@ export function computeQuizProgress(answers = {}, flowOverride = null) {
   }
 }
 
-/* ---------- ルールベース回答分析（対応表照合・中立状態対応） ---------- */
+/* ---------- ルールベース回答分析（緊急度×未整理度スコア・理由統合・おひとりさま対応） ---------- */
 export function computeAnalysisFromAnswers(answers = {}, itemsMap = {}, options = {}) {
   const flow = computeQuizFlow(answers)
-  const newly = []      // {id, reason}
+  const newly = []      // {id, reason, score, weight}
   const known = []      // {id, reason}
   const neutral = []    // {id, reason}
   const naSuggest = []  // {id, reason}
-  const suggestMap = {}
+  const suggestMap = {} // id -> { reasons: [], maxWeight: number }
   const neutralMap = {}
+  let needsSoloSupport = false
 
   flow.forEach((qId) => {
     const opt = resolveAnswerOption(qId, answers[qId])
     if (!opt) return
 
-    if (opt.suggest) {
-      suggestMap[opt.suggest] = opt.reason || "質問の回答から確認が必要と見つかりました。"
+    if (opt.soloSupport) {
+      needsSoloSupport = true
     }
+
+    if (opt.suggest) {
+      const id = opt.suggest
+      const reason = opt.reason || "質問の回答から確認が必要と見つかりました。"
+      const weight = typeof opt.weight === 'number' ? opt.weight : 2
+      if (!suggestMap[id]) {
+        suggestMap[id] = { reasons: [reason], maxWeight: weight }
+      } else {
+        if (!suggestMap[id].reasons.includes(reason)) {
+          suggestMap[id].reasons.push(reason)
+        }
+        suggestMap[id].maxWeight = Math.max(suggestMap[id].maxWeight, weight)
+      }
+    }
+
     if (opt.known) {
       opt.known.forEach((itemId) => {
         if (!suggestMap[itemId]) {
@@ -136,6 +170,7 @@ export function computeAnalysisFromAnswers(answers = {}, itemsMap = {}, options 
         }
       })
     }
+
     if (opt.neutral) {
       opt.neutral.forEach((itemId) => {
         if (!suggestMap[itemId]) {
@@ -146,6 +181,7 @@ export function computeAnalysisFromAnswers(answers = {}, itemsMap = {}, options 
         }
       })
     }
+
     if (opt.naCandidate) {
       naSuggest.push({ id: opt.naCandidate, reason: opt.reason })
     }
@@ -161,15 +197,30 @@ export function computeAnalysisFromAnswers(answers = {}, itemsMap = {}, options 
 
   Object.keys(suggestMap).forEach((id) => {
     delete neutralMap[id]
+    const entry = suggestMap[id]
+    const combinedReason = entry.reasons.join(' ')
     const st = (itemsMap[id] && itemsMap[id].state) || "notyet"
     if (st === "done") {
       knownIds[id] = { id, reason: "すでに対策が完了しています。" }
     } else if (st === "doing") {
-      knownIds[id] = { id, reason: `${suggestMap[id]}（現在も進行中です）` }
+      knownIds[id] = { id, reason: `${combinedReason}（現在も進行中です）` }
     } else {
-      newly.push({ id, reason: suggestMap[id] })
+      const urgency = ITEM_URGENCY_SCORE[id] || 50
+      const score = urgency + entry.maxWeight * 20
+      newly.push({
+        id,
+        reason: combinedReason,
+        weight: entry.maxWeight,
+        score
+      })
       delete knownIds[id]
     }
+  })
+
+  // 緊急度×未整理度の高い順に並べる（同点なら ITEM_URGENCY_SCORE 順）
+  newly.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score
+    return (ITEM_URGENCY_SCORE[b.id] || 0) - (ITEM_URGENCY_SCORE[a.id] || 0)
   })
 
   // 中立項目でも、すでに手順が進んでいる・完了している場合は実際の状態を優先する
@@ -208,6 +259,7 @@ export function computeAnalysisFromAnswers(answers = {}, itemsMap = {}, options 
     neutral,
     naSuggest,
     unconfirmed,
+    needsSoloSupport,
     totalAnswered: flow.filter((qId) => answers[qId] !== undefined).length,
     totalQuestions: flow.length,
     isPartial: !!options.isPartial
@@ -242,15 +294,39 @@ export function pickPriorityItem(analysis, itemsMap = {}, fallbackPriorityId = n
     }
   }
 
-  const nextUnfinished = ITEMS.find((it) => (itemsMap[it.id]?.state || 'notyet') !== 'done')
+  const unfinishedOrdered = [...ITEMS].sort(
+    (a, b) => (ITEM_URGENCY_SCORE[b.id] || 0) - (ITEM_URGENCY_SCORE[a.id] || 0)
+  )
+  const nextUnfinished = unfinishedOrdered.find((it) => (itemsMap[it.id]?.state || 'notyet') !== 'done')
   if (nextUnfinished) {
     return {
       id: nextUnfinished.id,
       item: nextUnfinished,
-      reason: 'まだ完了していない項目の中から、次に進められる準備を選びました。',
+      reason: 'まだ完了していない項目の中から、緊急度・重要度の高い準備を選びました。',
       fromSurvey: false
     }
   }
 
   return null
+}
+
+/**
+ * 保存された回答と現在の項目状態から最新の診断結果を取得する
+ */
+export function resolveLatestAnalysis(state = {}) {
+  const hasSurveyOutput = state.quizDone || state.quizPreview || !!state.analysis
+  if (!hasSurveyOutput) return null
+  if (Object.keys(state.quizAnswers || {}).length > 0) {
+    return computeAnalysisFromAnswers(state.quizAnswers, state.items, { isPartial: !state.quizDone })
+  }
+  return state.analysis || null
+}
+
+/**
+ * 指定項目に対するアンケート上のおすすめ理由を返す（該当なし・完了時は null）
+ */
+export function getItemSurveyRecommendation(state = {}, itemId) {
+  const analysis = resolveLatestAnalysis(state)
+  if (!analysis || !Array.isArray(analysis.newly)) return null
+  return analysis.newly.find((entry) => entry.id === itemId) || null
 }

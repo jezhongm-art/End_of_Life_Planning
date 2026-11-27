@@ -118,29 +118,39 @@ export function defaultState() {
 export function sampleState() {
   const s = defaultState()
   s.seenGuide = true
-  s.items.note = { state: 'done', done: [true, true, true, true] }
+  s.items.contacts = { state: 'done', done: [true, true, true, true] }
   s.items.medical = { state: 'done', done: [true, true, true, true] }
   s.items.money = { state: 'doing', done: [true, true, false, false] }
   s.items.insurance = { state: 'notyet', done: [false, false, false, false] }
   s.items.house = { state: 'doing', done: [true, false, false, false] }
+  s.items.will = { state: 'notyet', done: [false, false, false, false] }
+  s.items.note = { state: 'done', done: [true, true, true, true] }
   s.items.grave = { state: 'notyet', done: [false, false, false, false] }
-  s.items.family = { state: 'notyet', done: [false, false, false] }
+  s.items.family = { state: 'notyet', done: [false, false, false, false] }
+  s.items.belongings = { state: 'notyet', done: [false, false, false, false] }
   s.items.pet = { state: 'notyet', done: [false, false, false, false] }
   s.items.digital = { state: 'notyet', done: [false, false, false, false] }
   s.priority = 'money'
   s.quizAnswers = {
+    q_contacts_1: 'organized',
+    q_medical_1: 'shared',
     q_money_1: 'not_shared',
     q_money_2: 'listed',
-    q_insurance_1: 'unclear',
-    q_digital_1: 'using',
-    q_digital_2: 'not_noted',
-    q_medical_1: 'shared',
     q_house_type: 'own_home',
     q_house_own: 'ambiguous',
+    q_insurance_1: 'unclear',
+    q_insurance_2: 'place_unknown',
+    q_digital_1: 'using',
+    q_digital_2: 'not_noted',
+    q_will_1: 'undecided',
+    q_will_2: 'does_not_know',
+    q_family_1: 'summarized',
+    q_family_2: 'rarely',
+    q_family_3: 'undecided',
     q_grave_1: 'has_wish_untalked',
     q_grave_2: 'not_written',
-    q_family_1: 'in_progress',
-    q_family_2: 'rarely',
+    q_belongings_1: 'not_started',
+    q_belongings_2: 'not_noted',
     q_pet_1: 'none'
   }
   s.quizDone = true

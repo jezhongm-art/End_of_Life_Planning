@@ -75,6 +75,12 @@ test('画面コンテキストに応じて異なるワンタップ質問候補�
   assert.ok(digitalCtx.screenLabel.includes('スマホ・ネット'))
   assert.notDeepEqual(moneyCtx.presets, digitalCtx.presets)
 
+  for (const id of ['contacts', 'will', 'belongings']) {
+    const ctx = getScreenSupportContext('/items/detail', `?id=${id}`, {})
+    assert.equal(ctx.presets.length, 3, `${id} のワンタップ質問候補は3件であるべき`)
+    assert.ok(ctx.screenLabel.length > 0)
+  }
+
   const surveyCtx = getScreenSupportContext('/survey/q', '', {})
   assert.equal(surveyCtx.screenLabel, '「生活状況アンケート」')
   assert.equal(surveyCtx.presets.length, 3)

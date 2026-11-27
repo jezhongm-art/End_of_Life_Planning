@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import { useApp } from '../shared/context/AppContext'
 import { ITEMS } from './items'
+import { getItemSurveyRecommendation } from '../memberC/rules'
 import { Icon } from '../shared/components/SvgIcons'
 
 export default function ItemDetail() {
@@ -12,6 +13,7 @@ export default function ItemDetail() {
   const [lastCompletedStepIdx, setLastCompletedStepIdx] = useState(null)
 
   const item = ITEMS.find((it) => it.id === itemId) || ITEMS[0]
+  const recommendation = getItemSurveyRecommendation(state, item.id)
   const currentItemState = state.items[item.id]?.state || 'notyet'
   const currentItemDone = state.items[item.id]?.done || []
   const firstUncheckedIdx = item.steps.findIndex((_, idx) => !currentItemDone[idx])
@@ -39,6 +41,19 @@ export default function ItemDetail() {
       <div className="plain-head">
         <h2 className="plain-title">{item.title}</h2>
         <p className="plain-lead">{item.desc}</p>
+        {recommendation?.reason && (
+          <p
+            style={{
+              marginTop: '.4rem',
+              fontSize: '.88rem',
+              fontWeight: 700,
+              color: 'var(--brand-deep)',
+              lineHeight: 1.55
+            }}
+          >
+            おすすめ理由：{recommendation.reason}
+          </p>
+        )}
       </div>
 
       {/* 誤操作時の取り消し導線（直前に手順を完了にした場合のみ表示） */}
