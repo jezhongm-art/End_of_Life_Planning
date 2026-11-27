@@ -11,6 +11,7 @@ import {
   draftMemoryFromNote,
   getScreenSupportContext,
   getStoredApiKey,
+  normalizeConversationHistory,
   saveStoredApiKey,
   summarizeFamilyTalkNote
 } from '../src/shared/utils/geminiClient.js'
@@ -137,4 +138,48 @@ test('ブラウザ向けAPIキーの保存・取得・消去が動作する', ()
 
   clearStoredApiKey(mockStorage)
   assert.equal(getStoredApiKey(mockStorage), '')
+})
+
+test('会話履歴を引き継いでマルチターン相談でき、先頭がuser・末尾もuserになる', async () => {
+  const normalized = normalizeConversationHistory(
+    [
+      { role: 'model', text: '先頭の不要なmodel発話' },
+      { role: 'user', text: '最初の質問' },
+      { role: 'model', text: '最初の返答' },
+      { role: 'user', text: 'つづきの質問' }
+    ],
+    4
+  )
+  assert.equal(normalized[0].role, 'user')
+  assert.equal(normalized.length, 3)
+
+  let sentBody = null
+  const mockFetch = async (_url, options) => {
+    sentBody = JSON.parse(options.body)
+    return {
+      ok: true,
+      json: async () => ({
+        candidates: [{ content: { parts: [{ text: 'はい、まず使っている1冊だけで大丈夫です。' }] } }]
+      })
+    }
+  }
+
+  const reply = await askGeminiSupport({
+    apiKey: 'AIzaChatTest',
+    question: '銀行に行かなくてもできますか？',
+    history: [
+      { role: 'user', text: '通帳の整理はどこから始めますか？' },
+      { role: 'model', text: 'まずは通帳1冊の場所をメモしてみましょう。' }
+    ],
+    contextSummary: '財産・口座の整理',
+    fetchFn: mockFetch
+  })
+
+  assert.ok(reply.includes('1冊だけ'))
+  assert.ok(sentBody.system_instruction.parts[0].text.includes('財産・口座の整理'))
+  assert.deepEqual(
+    sentBody.contents.map((c) => c.role),
+    ['user', 'model', 'user']
+  )
+  assert.equal(sentBody.contents[2].parts[0].text, '銀行に行かなくてもできますか？')
 })

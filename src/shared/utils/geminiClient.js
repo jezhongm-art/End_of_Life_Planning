@@ -189,17 +189,50 @@ export function classifyGeminiError(status, payloadMessage = '') {
   return '通信エラーによりAIから返答を受け取れませんでした。インターネット接続をご確認ください。'
 }
 
-export function buildGeminiRequestBody({ systemInstruction, promptText }) {
+export function normalizeConversationHistory(history = [], maxMessages = 12) {
+  const valid = (history || [])
+    .filter((m) => m && (m.role === 'user' || m.role === 'model') && String(m.text || '').trim())
+    .map((m) => ({
+      role: m.role,
+      text: String(m.text).trim()
+    }))
+
+  let sliced = valid.slice(-maxMessages)
+  while (sliced.length > 0 && sliced[0].role !== 'user') {
+    sliced = sliced.slice(1)
+  }
+
+  const merged = []
+  sliced.forEach((m) => {
+    const prev = merged[merged.length - 1]
+    if (prev && prev.role === m.role) {
+      prev.text = `${prev.text}\n${m.text}`
+    } else {
+      merged.push({ ...m })
+    }
+  })
+  return merged
+}
+
+export function buildGeminiRequestBody({ systemInstruction, promptText, messages }) {
+  const contents =
+    Array.isArray(messages) && messages.length > 0
+      ? messages.map((m) => ({
+          role: m.role === 'model' ? 'model' : 'user',
+          parts: [{ text: String(m.text || '').trim() }]
+        }))
+      : [
+          {
+            role: 'user',
+            parts: [{ text: promptText }]
+          }
+        ]
+
   return {
     system_instruction: {
       parts: [{ text: systemInstruction }]
     },
-    contents: [
-      {
-        role: 'user',
-        parts: [{ text: promptText }]
-      }
-    ]
+    contents
   }
 }
 
@@ -207,6 +240,7 @@ export async function callGeminiGenerateContent({
   apiKey,
   systemInstruction,
   promptText,
+  messages,
   fetchFn = globalThis.fetch
 }) {
   const key = String(apiKey || '').trim()
@@ -217,7 +251,7 @@ export async function callGeminiGenerateContent({
     throw new Error('この環境では通信機能（fetch）を利用できません。')
   }
 
-  const body = buildGeminiRequestBody({ systemInstruction, promptText })
+  const body = buildGeminiRequestBody({ systemInstruction, promptText, messages })
 
   let response
   try {
@@ -267,18 +301,24 @@ const SENIOR_ADVISOR_SYSTEM = [
   '5. 法律・税務・医療の個別判断が必要な内容では、専門の窓口（法テラス、国民生活センター、かかりつけ医など）への相談をやさしく案内してください。'
 ].join('\n')
 
-export async function askGeminiSupport({ apiKey, question, contextSummary = '', fetchFn }) {
-  const promptText = [
-    contextSummary ? `【現在の画面状況】\n${contextSummary}` : '',
-    `【ご利用者からの質問】\n${String(question || '').trim()}`
-  ]
-    .filter(Boolean)
-    .join('\n\n')
+export async function askGeminiSupport({
+  apiKey,
+  question,
+  history = [],
+  contextSummary = '',
+  fetchFn
+}) {
+  const q = String(question || '').trim()
+  const systemInstruction = contextSummary
+    ? `${SENIOR_ADVISOR_SYSTEM}\n\n【現在の画面状況】\n${contextSummary}`
+    : SENIOR_ADVISOR_SYSTEM
+
+  const messages = normalizeConversationHistory([...(history || []), { role: 'user', text: q }])
 
   return callGeminiGenerateContent({
     apiKey,
-    systemInstruction: SENIOR_ADVISOR_SYSTEM,
-    promptText,
+    systemInstruction,
+    messages,
     fetchFn
   })
 }
