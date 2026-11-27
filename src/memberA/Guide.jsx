@@ -108,7 +108,7 @@ export default function Guide() {
           className="btn btn-primary btn-block"
           onClick={handleStartSurvey}
         >
-          質問に答えてはじめる（おすすめ）
+          質問からはじめる（おすすめ）
         </button>
 
         <button

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useApp } from '../shared/context/AppContext'
 import { AccessibleDialog } from '../shared/components/AccessibleDialog'
+import { GEMINI_MODEL, testGeminiConnection } from '../shared/utils/geminiClient'
 
 const TEXT_SIZE_OPTIONS = [
   { id: '1', label: '標準（17px）' },
@@ -11,9 +12,24 @@ const TEXT_SIZE_OPTIONS = [
 
 export default function Settings() {
   const navigate = useNavigate()
-  const { state, updateSettings, setTextSize, loadSamplePreset, resetAllData } = useApp()
+  const {
+    state,
+    apiKey,
+    hasApiKey,
+    saveApiKey,
+    removeApiKey,
+    updateSettings,
+    setTextSize,
+    loadSamplePreset,
+    resetAllData
+  } = useApp()
 
   const [nameInput, setNameInput] = useState(state.name || '')
+  const [apiKeyInput, setApiKeyInput] = useState(apiKey || '')
+  const [showApiKey, setShowApiKey] = useState(false)
+  const [testingKey, setTestingKey] = useState(false)
+  const [testResult, setTestResult] = useState(null) // { ok: boolean, message: string }
+
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [showSampleConfirm, setShowSampleConfirm] = useState(false)
 
@@ -24,9 +40,49 @@ export default function Settings() {
     setNameInput(state.name || '')
   }, [state.name])
 
+  useEffect(() => {
+    setApiKeyInput(apiKey || '')
+  }, [apiKey])
+
   const handleSaveName = (e) => {
     e.preventDefault()
     updateSettings({ name: nameInput.trim() }, 'お名前を保存しました')
+  }
+
+  const handleSaveApiKey = (e) => {
+    e.preventDefault()
+    setTestResult(null)
+    saveApiKey(apiKeyInput)
+  }
+
+  const handleTestApiKey = async () => {
+    const keyToTest = apiKeyInput.trim() || apiKey
+    if (!keyToTest) {
+      setTestResult({ ok: false, message: '先にAPIキーをご入力ください。' })
+      return
+    }
+    setTestingKey(true)
+    setTestResult(null)
+    try {
+      await testGeminiConnection(keyToTest)
+      setTestResult({
+        ok: true,
+        message: `AI（${GEMINI_MODEL}）との接続に成功しました。このままご利用いただけます。`
+      })
+    } catch (err) {
+      setTestResult({
+        ok: false,
+        message: err?.message || '接続を確かめられませんでした。'
+      })
+    } finally {
+      setTestingKey(false)
+    }
+  }
+
+  const handleClearApiKey = () => {
+    setApiKeyInput('')
+    setTestResult(null)
+    removeApiKey()
   }
 
   const handleReset = () => {
@@ -70,14 +126,14 @@ export default function Settings() {
 
       {/* 文字サイズ変更 */}
       <section className="card" style={{ marginTop: '1rem' }}>
-        <h3 className="card-title" style={{ fontSize: '1.04rem' }}>文字サイズ</h3>
-        <p className="card-sub">アプリ全体の文字サイズを切り替えます。</p>
+        <h3 className="card-title" style={{ fontSize: '1.04rem' }}>文字の大きさ</h3>
+        <p className="card-sub">アプリ全体の文字の大きさを切り替えます。</p>
 
         <div
           className="segtabs segtabs-3"
           style={{ marginTop: '.7rem', marginBottom: 0 }}
           role="group"
-          aria-label="文字サイズの選択"
+          aria-label="文字の大きさの選択"
         >
           {TEXT_SIZE_OPTIONS.map((opt) => {
             const isSelected = state.textSize === opt.id
@@ -94,6 +150,94 @@ export default function Settings() {
             )
           })}
         </div>
+      </section>
+
+      {/* AI相談機能（Gemini APIキー設定） */}
+      <section className="card" style={{ marginTop: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '.5rem', flexWrap: 'wrap' }}>
+          <h3 className="card-title" style={{ fontSize: '1.04rem' }}>
+            <label htmlFor="settings-apikey-input">AI相談機能（Gemini）のキー設定</label>
+          </h3>
+          <span className={`st ${hasApiKey ? 's-done' : 's-notyet'}`}>
+            <span className="mk" aria-hidden="true">{hasApiKey ? '✓' : '○'}</span>
+            {hasApiKey ? '設定済み' : '未設定'}
+          </span>
+        </div>
+
+        <p className="card-sub">
+          右下の「困ったら聞く」や文章の整え機能を使うためのキー（モデル：{GEMINI_MODEL}）を設定します。
+        </p>
+
+        <form onSubmit={handleSaveApiKey} style={{ marginTop: '.7rem' }}>
+          <div style={{ display: 'flex', gap: '.5rem', alignItems: 'center' }}>
+            <input
+              id="settings-apikey-input"
+              type={showApiKey ? 'text' : 'password'}
+              className="input"
+              style={{ flex: 1 }}
+              value={apiKeyInput}
+              onChange={(e) => setApiKeyInput(e.target.value)}
+              placeholder="Google AI Studio の APIキーを入力"
+              autoComplete="off"
+            />
+            <button
+              type="button"
+              className="btn btn-ghost btn-small"
+              onClick={() => setShowApiKey((v) => !v)}
+              aria-pressed={showApiKey}
+            >
+              {showApiKey ? '隠す' : '表示'}
+            </button>
+          </div>
+
+          <div className="btn-row" style={{ marginTop: '.75rem' }}>
+            <button type="submit" className="btn btn-primary">
+              キーを保存する
+            </button>
+            <button
+              type="button"
+              className="btn btn-sub"
+              disabled={testingKey || (!apiKeyInput.trim() && !apiKey)}
+              onClick={handleTestApiKey}
+            >
+              {testingKey ? '確認中…' : '接続を確かめる'}
+            </button>
+          </div>
+
+          {hasApiKey && (
+            <div style={{ marginTop: '.55rem' }}>
+              <button
+                type="button"
+                className="btn btn-ghost btn-block btn-small"
+                style={{ color: 'var(--rose)' }}
+                onClick={handleClearApiKey}
+              >
+                保存済みのキーを消去する
+              </button>
+            </div>
+          )}
+        </form>
+
+        {testResult && (
+          <p
+            role="status"
+            style={{
+              marginTop: '.7rem',
+              padding: '.6rem .8rem',
+              borderRadius: 'var(--radius-s)',
+              background: testResult.ok ? 'var(--brand-tint)' : 'var(--rose-tint)',
+              color: testResult.ok ? 'var(--brand-deep)' : 'var(--rose)',
+              fontSize: '.88rem',
+              fontWeight: 700
+            }}
+          >
+            {testResult.message}
+          </p>
+        )}
+
+        <p className="note" style={{ fontSize: '.82rem', marginTop: '.7rem' }}>
+          ※ キーはこの端末のブラウザ内だけに保存され、GoogleのGemini API以外には送信されません。共有パソコンをお使いの場合は、利用後に「保存済みのキーを消去する」を押してください（可能であればGoogle AI Studio側でも利用上限や接続先制限の設定をおすすめします）。
+        </p>
       </section>
 
       {/* 入力例（お試しデータ）体験 */}
@@ -117,7 +261,7 @@ export default function Settings() {
       <section className="card" style={{ marginTop: '1rem' }}>
         <h3 className="card-title" style={{ fontSize: '1.04rem' }}>初回案内の見直し</h3>
         <p className="card-sub">
-          アプリの概要や3ステップの流れをもう一度確認できます。
+          アプリの概要や3つの流れをもう一度確認できます。
         </p>
         <div style={{ marginTop: '.7rem' }}>
           <Link to="/guide" className="btn btn-ghost btn-block">
@@ -132,7 +276,7 @@ export default function Settings() {
           データの全消去
         </h3>
         <p className="card-sub">
-          この端末のブラウザ内に保存されている進み具合・アンケートのお答え・思い出・話し合い記録をすべて消去します。
+          この端末のブラウザ内に保存されている進み具合・アンケートのお答え・思い出・話し合い記録・APIキーをすべて消去します。
         </p>
         <div style={{ marginTop: '.7rem' }}>
           <button
@@ -177,7 +321,7 @@ export default function Settings() {
         isOpen={showResetConfirm}
         onClose={() => setShowResetConfirm(false)}
         title="すべてのデータを削除しますか？"
-        description="この操作を行うと、これまでに登録した準備の進捗、アンケートの回答、思い出、話し合い記録などのデータがすべて消去され、空の初期状態に戻ります。"
+        description="この操作を行うと、これまでに登録した準備の進捗、アンケートの回答、思い出、話し合い記録、保存したAPIキーなどがすべて消去され、空の初期状態に戻ります。"
         initialFocusRef={resetCancelRef}
       >
         <div className="btn-row" style={{ marginTop: '1.2rem' }}>

@@ -14,6 +14,11 @@ import {
   normalizeLoadedState,
   sampleState
 } from '../utils/appLogic'
+import {
+  clearStoredApiKey,
+  getStoredApiKey,
+  saveStoredApiKey
+} from '../utils/geminiClient'
 
 const STORAGE_KEY = 'shukatsu_michishirube_react_v1'
 
@@ -82,6 +87,7 @@ export function AppProvider({ children }) {
   const [state, setState] = useState(initial.state)
 
   const latestStateRef = useRef(state)
+  const [apiKey, setApiKey] = useState(() => getStoredApiKey())
   const [saveError, setSaveError] = useState(null)
   const [toastMessage, setToastMessage] = useState(null)
   const toastTimerRef = useRef(null)
@@ -446,6 +452,29 @@ export function AppProvider({ children }) {
     return commitState(sample, { successMessage: '入力例（お試しデータ）を読み込みました' })
   }
 
+  const saveApiKey = (nextKey) => {
+    const res = saveStoredApiKey(nextKey)
+    if (!res.ok) {
+      toast(res.error)
+      return false
+    }
+    const updated = res.key || ''
+    setApiKey(updated)
+    toast(updated ? 'AI用のキーを保存しました' : 'AI用のキーを消去しました')
+    return true
+  }
+
+  const removeApiKey = () => {
+    const res = clearStoredApiKey()
+    if (!res.ok) {
+      toast(res.error)
+      return false
+    }
+    setApiKey('')
+    toast('AI用のキーを消去しました')
+    return true
+  }
+
   const resetAllData = () => {
     try {
       localStorage.removeItem(STORAGE_KEY)
@@ -453,6 +482,8 @@ export function AppProvider({ children }) {
     } catch (e) {
       setSaveError(classifyStorageError(e))
     }
+    clearStoredApiKey()
+    setApiKey('')
     const blank = defaultState()
     latestStateRef.current = blank
     setState(blank)
@@ -463,6 +494,10 @@ export function AppProvider({ children }) {
 
   const value = {
     state,
+    apiKey,
+    hasApiKey: Boolean(apiKey),
+    saveApiKey,
+    removeApiKey,
     saveError,
     loadError,
     clearSaveError,

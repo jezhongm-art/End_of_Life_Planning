@@ -16,7 +16,8 @@ export function AccessibleDialog({
   description,
   children,
   initialFocusRef,
-  closeOnBackdrop = true
+  closeOnBackdrop = true,
+  dialogClassName = ''
 }) {
   const titleId = useId()
   const descId = useId()
@@ -118,7 +119,7 @@ export function AccessibleDialog({
     >
       <div
         ref={dialogRef}
-        className="dialog"
+        className={`dialog ${dialogClassName}`.trim()}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}

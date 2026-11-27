@@ -49,7 +49,7 @@ export const SCREENS_INFO = [
   { path: "/survey/result",no: "05", name: "質問結果・準備の提案",           kind: "core", note: "対応表照合・次の一歩・途中再開導線" },
   { path: "/items",        no: "06", name: `準備項目一覧（${ITEMS.length}項目）`, kind: "core", note: "件数自動取得・状態管理・優先選択" },
   { path: "/items/detail", no: "07", name: "準備項目の詳細",                 kind: "core", note: "1手順ずつ案内・完了操作" },
-  { path: "/items/info",   no: "08", name: "くわしい案内・相談先",           kind: "core", note: "全手順・状態変更・相談先リンク" },
+  { path: "/items/info",   no: "08", name: "くわしい案内",                   kind: "core", note: "全手順・状態変更・相談先リンク" },
   { path: "/wishes",       no: "09", name: "やってみたいこと",               kind: "core", note: "選択式と自由入力・ごほうび設定" },
   { path: "/settings",     no: "10", name: "基本設定・データ管理",           kind: "core", note: "名前・文字サイズ・入力例の体験・消去" },
   { path: "/memories",     no: "11", name: "希望・思い出帳",                 kind: "plus", note: "文章・写真保存・一覧・編集・削除" },

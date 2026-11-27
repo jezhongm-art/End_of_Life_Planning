@@ -110,7 +110,7 @@ export default function ItemDetail() {
               className="btn btn-primary btn-block"
               onClick={() => handleCompleteFirstStep(firstUncheckedIdx)}
             >
-              {isFinalStep ? 'できた（この項目を完了する）' : 'できた（次の手順へ進む）'}
+              {isFinalStep ? 'できた（完了する）' : 'できた（つぎへ進む）'}
             </button>
           </div>
         </section>
@@ -122,7 +122,7 @@ export default function ItemDetail() {
           to={`/items/info?id=${item.id}`}
           className="btn btn-ghost btn-block"
         >
-          くわしい手順・やり直し・相談先を見る
+          くわしい手順・相談先を見る
         </Link>
       </div>
     </div>

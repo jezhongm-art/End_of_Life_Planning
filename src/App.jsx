@@ -3,6 +3,7 @@ import { Routes, Route, useLocation, Navigate } from 'react-router-dom'
 import { SvgSprite } from './shared/components/SvgIcons'
 import { Header } from './shared/components/Header'
 import { BottomNav } from './shared/components/BottomNav'
+import { AiHelpWidget } from './shared/components/AiHelpWidget'
 import { ScrollToTop } from './shared/components/ScrollToTop'
 import { useApp } from './shared/context/AppContext'
 
@@ -47,7 +48,7 @@ export default function App() {
       case '/items/detail':
         return '準備項目の詳細'
       case '/items/info':
-        return 'くわしい案内・相談先'
+        return 'くわしい案内'
       case '/wishes':
         return 'やってみたいこと'
       case '/settings':
@@ -139,6 +140,7 @@ export default function App() {
         </main>
       </div>
 
+      <AiHelpWidget />
       <BottomNav />
     </>
   )

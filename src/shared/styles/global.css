@@ -91,7 +91,7 @@ body {
 .app {
   max-width: 44rem;
   margin: 0 auto;
-  padding: 0 .9rem 8.5rem;
+  padding: 0 .9rem 10.5rem;
   overflow-wrap: anywhere;
 }
 
@@ -1138,7 +1138,7 @@ body {
 .toast {
   position: fixed;
   left: 50%;
-  bottom: calc(5.6rem + env(safe-area-inset-bottom));
+  bottom: calc(9.2rem + env(safe-area-inset-bottom));
   transform: translateX(-50%) translateY(0);
   z-index: 80;
   background: var(--ink);
@@ -1152,6 +1152,68 @@ body {
   text-align: center;
   line-height: 1.55;
   animation: fadein .2s ease;
+}
+
+/* ---------- floating AI help button & dialog ---------- */
+.ai-fab {
+  position: fixed;
+  right: max(.75rem, calc((100vw - 44rem) / 2 + .75rem));
+  bottom: calc(4.75rem + env(safe-area-inset-bottom));
+  z-index: 40;
+  min-height: 2.85rem;
+  padding: 0 .9rem;
+  border-radius: 999px;
+  border: 2px solid #fffdf7;
+  background: #9a5a08;
+  color: #fff;
+  font-family: var(--font-head);
+  font-weight: 800;
+  font-size: .9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(27, 43, 51, .28);
+  transition: transform .15s ease, background-color .15s ease;
+}
+.ai-fab:hover {
+  background: #7d4905;
+}
+.ai-fab .ic {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.ai-dialog {
+  max-width: 30rem;
+  max-height: 86vh;
+  overflow-y: auto;
+}
+
+.ai-answer-box {
+  margin-top: .55rem;
+  padding: 1rem 1.05rem;
+  border-radius: var(--radius-s);
+  background: var(--brand-tint);
+  border: 2px solid var(--brand-tint-2);
+  color: var(--ink);
+  font-size: 1.04rem;
+  line-height: 1.85;
+  white-space: pre-wrap;
+}
+
+.mic-btn {
+  background: var(--blue-tint);
+  color: var(--blue);
+  border-color: #c4ddf0;
+}
+.mic-btn:hover {
+  background: #d2e7f7;
+}
+.mic-btn.listening {
+  background: var(--rose-tint);
+  color: var(--rose);
+  border-color: var(--rose);
 }
 
 /* ---------- special blocks ---------- */
@@ -1609,7 +1671,7 @@ html[data-ts="3"] .statusgrid {
   .backbtn { height: 2.35rem; padding: 0 .5rem 0 .35rem; font-size: .8rem; }
   .textsize-btn { height: 2.35rem; padding: 0 .45rem; font-size: .76rem; }
   .top { padding: .45rem .65rem; margin: 0 -.65rem .85rem; }
-  .app { padding: 0 .65rem 8.5rem; }
+  .app { padding: 0 .65rem 10.5rem; }
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -1624,7 +1686,7 @@ html[data-ts="3"] .statusgrid {
 }
 
 @media print {
-  .bottomnav, .toast, .iconbtn, .btn, .protobar, .sheet, .overlay { display: none !important; }
+  .bottomnav, .toast, .iconbtn, .btn, .protobar, .sheet, .overlay, .ai-fab { display: none !important; }
   body { background: #fff; }
   .app { padding-bottom: 0; }
   .top { position: static; }

@@ -4,6 +4,8 @@ import { useApp } from '../shared/context/AppContext'
 import { TALK_TOPICS } from '../shared/wishes'
 import { Icon } from '../shared/components/SvgIcons'
 import { AccessibleDialog } from '../shared/components/AccessibleDialog'
+import { draftFamilyMessage, summarizeFamilyTalkNote } from '../shared/utils/geminiClient'
+import { useSpeechInput } from '../shared/utils/useSpeechInput'
 
 const FAMILY_TABS = [
   { id: 'topics', label: '話題・相談練習' },
@@ -12,7 +14,7 @@ const FAMILY_TABS = [
 ]
 
 export default function FamilyTalk() {
-  const { state, addTalkLog, deleteTalkLog, updateRewardConsult, toast } = useApp()
+  const { state, apiKey, hasApiKey, calcProgress, addTalkLog, deleteTalkLog, updateRewardConsult, toast } = useApp()
 
   const [activeTab, setActiveTab] = useState('topics') // topics | write | logs
   const [partner, setPartner] = useState('')
@@ -22,8 +24,23 @@ export default function FamilyTalk() {
   const [topicIdx, setTopicIdx] = useState(0)
   const [deleteTarget, setDeleteTarget] = useState(null)
 
+  const [aiDraftingConsult, setAiDraftingConsult] = useState(false)
+  const [aiSummarizingLog, setAiSummarizingLog] = useState(false)
+  const [aiError, setAiError] = useState('')
+
   const rewardWish = state.wishes.find((w) => w.id === state.rewardWishId)
   const consult = state.rewardConsult
+  const progress = calcProgress()
+
+  const speechMemo = useSpeechInput({
+    onResult: (transcript) => {
+      setMemo((prev) => (prev ? `${prev}\n${transcript}` : transcript))
+      toast('話した内容をメモに入れました')
+    },
+    onError: (msg) => {
+      toast(msg)
+    }
+  })
 
   const handleTabKeyDown = (e, idx) => {
     if (e.key === 'ArrowRight') {
@@ -53,6 +70,7 @@ export default function FamilyTalk() {
       setDecided('')
       setPending('')
       setMemo('')
+      setAiError('')
       setActiveTab('logs')
     }
   }
@@ -65,6 +83,51 @@ export default function FamilyTalk() {
       message: `準備の区切りがついたので、家族みんなで「${targetWish}」を相談したいです。`,
       replyText: ''
     })
+  }
+
+  const handleAiDraftConsult = async () => {
+    if (aiDraftingConsult) return
+    setAiError('')
+    setAiDraftingConsult(true)
+    const targetWish = rewardWish ? rewardWish.text : '家族でのお祝い'
+    try {
+      const drafted = await draftFamilyMessage({
+        apiKey,
+        wishText: targetWish,
+        nextItemTitle: progress.nextItem?.title
+      })
+      updateRewardConsult({
+        status: 'pending',
+        wishText: targetWish,
+        message: drafted,
+        replyText: ''
+      })
+      toast('AIで相談文の下書きを作成しました')
+    } catch (err) {
+      setAiError(err?.message || '相談文の作成に失敗しました。')
+    } finally {
+      setAiDraftingConsult(false)
+    }
+  }
+
+  const handleAiSummarizeNote = async () => {
+    if (!memo.trim() || aiSummarizingLog) return
+    setAiError('')
+    setAiSummarizingLog(true)
+    try {
+      const res = await summarizeFamilyTalkNote({
+        apiKey,
+        rawNote: memo.trim()
+      })
+      if (res.decided) setDecided(res.decided)
+      if (res.pending) setPending(res.pending)
+      if (res.memo) setMemo(res.memo)
+      toast('AIでメモの内容を整理しました')
+    } catch (err) {
+      setAiError(err?.message || 'メモの整理に失敗しました。')
+    } finally {
+      setAiSummarizingLog(false)
+    }
   }
 
   const handleSimulateReply = () => {
@@ -107,50 +170,42 @@ export default function FamilyTalk() {
 
   return (
     <div className="screen-anim">
-      {/* 画面説明 & 目的別タブ */}
-      <section className="card">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '.4rem', flexWrap: 'wrap' }}>
-          <h2 className="card-title">家族との対話・相談練習</h2>
-          <span className="tag tag-plus">暮らしのノート</span>
-        </div>
-        <p className="card-sub">
-          話題の準備・相談の練習、話し合いの記録、過去の記録を目的に合わせて使い分けられます。
-        </p>
-
-        <div
-          className="segtabs segtabs-3"
-          style={{ marginTop: '.9rem', marginBottom: 0 }}
-          role="tablist"
-          aria-label="家族との対話メニュー"
-        >
-          {FAMILY_TABS.map((tab, idx) => {
-            const isSelected = activeTab === tab.id
-            const text = typeof tab.label === 'function'
-              ? tab.label(state.talkLogs.length)
-              : tab.label
-            return (
-              <button
-                key={tab.id}
-                id={`family-tab-${tab.id}`}
-                type="button"
-                role="tab"
-                aria-selected={isSelected}
-                tabIndex={isSelected ? 0 : -1}
-                className={`segtab ${isSelected ? 'on' : ''}`}
-                onClick={() => setActiveTab(tab.id)}
-                onKeyDown={(e) => handleTabKeyDown(e, idx)}
-              >
-                {text}
-              </button>
-            )
-          })}
-        </div>
-      </section>
+      {/* 目的別タブ */}
+      <div
+        className="segtabs segtabs-3"
+        role="tablist"
+        aria-label="家族との対話メニュー"
+      >
+        {FAMILY_TABS.map((tab, idx) => {
+          const isSelected = activeTab === tab.id
+          const text = typeof tab.label === 'function'
+            ? tab.label(state.talkLogs.length)
+            : tab.label
+          return (
+            <button
+              key={tab.id}
+              id={`family-tab-${tab.id}`}
+              type="button"
+              role="tab"
+              aria-selected={isSelected}
+              tabIndex={isSelected ? 0 : -1}
+              className={`segtab ${isSelected ? 'on' : ''}`}
+              onClick={() => {
+                setActiveTab(tab.id)
+                setAiError('')
+              }}
+              onKeyDown={(e) => handleTabKeyDown(e, idx)}
+            >
+              {text}
+            </button>
+          )
+        })}
+      </div>
 
       {/* タブ1：話題・相談練習 */}
       {activeTab === 'topics' && (
         <div role="tabpanel" aria-labelledby="family-tab-topics">
-          <section className="card" style={{ marginTop: '1rem' }}>
+          <section className="card">
             <h3 className="card-title" style={{ fontSize: '1.02rem' }}>おすすめの話題</h3>
             <p className="card-sub">話し合いを切り出しやすい質問のきっかけです。</p>
 
@@ -175,11 +230,8 @@ export default function FamilyTalk() {
           <section className="card" style={{ marginTop: '1rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '.45rem', flexWrap: 'wrap' }}>
               <h3 className="card-title" style={{ fontSize: '1.02rem' }}>ごほうび相談の練習</h3>
-              <span className="tag">模擬体験・送信されません</span>
+              <span className="tag">送信されません</span>
             </div>
-            <p className="card-sub">
-              準備の区切りに、ご家族へ楽しみやお願いを切り出す練習ができます。
-            </p>
 
             <div className="notice notice-blue" style={{ marginTop: '.75rem' }}>
               <div className="n-ic">
@@ -196,23 +248,32 @@ export default function FamilyTalk() {
             </div>
 
             {consult.status === 'none' ? (
-              <div style={{ marginTop: '.85rem' }}>
+              <div style={{ marginTop: '.85rem', display: 'flex', flexDirection: 'column', gap: '.6rem' }}>
                 <p className="note" style={{ marginTop: 0 }}>
                   目標の楽しみ：<strong>{rewardWish ? rewardWish.text : '家族でのお祝い'}</strong>
                 </p>
                 <button
                   type="button"
                   className="btn btn-amber btn-block"
-                  style={{ marginTop: '.65rem' }}
                   onClick={handleStartSimulation}
                 >
                   相談文の下書きを作って試す（送信されません）
                 </button>
+                {hasApiKey && (
+                  <button
+                    type="button"
+                    className="btn btn-sub btn-block btn-small"
+                    disabled={aiDraftingConsult}
+                    onClick={handleAiDraftConsult}
+                  >
+                    {aiDraftingConsult ? '相談文を作成しています…' : 'AIに相談文を作ってもらう'}
+                  </button>
+                )}
               </div>
             ) : consult.status === 'pending' ? (
               <div className="preview-box" style={{ marginTop: '.85rem' }}>
                 <p style={{ fontWeight: 800, color: 'var(--blue)', fontSize: '.92rem' }}>
-                  【模擬体験】作成した相談文の下書き（外部には送信されていません）
+                  【練習】作成した相談文の下書き（外部には送信されていません）
                 </p>
                 <p style={{ marginTop: '.45rem', color: 'var(--ink)', fontSize: '.96rem' }}>
                   「{consult.message}」
@@ -247,7 +308,7 @@ export default function FamilyTalk() {
             ) : (
               <div className="celebrate" style={{ marginTop: '.85rem' }}>
                 <p style={{ fontWeight: 800, color: 'var(--amber)' }}>
-                  【模擬体験】家族からの返答イメージ
+                  【練習】家族からの返答イメージ
                 </p>
                 <p style={{ marginTop: '.35rem', fontSize: '.96rem', color: 'var(--ink)' }}>
                   「{consult.replyText}」
@@ -266,6 +327,12 @@ export default function FamilyTalk() {
                 </div>
               </div>
             )}
+
+            {aiError && (
+              <p role="alert" className="note" style={{ color: 'var(--rose)', fontWeight: 700 }}>
+                {aiError}
+              </p>
+            )}
           </section>
         </div>
       )}
@@ -273,7 +340,7 @@ export default function FamilyTalk() {
       {/* タブ2：記録を書く */}
       {activeTab === 'write' && (
         <div role="tabpanel" aria-labelledby="family-tab-write">
-          <section className="card" style={{ marginTop: '1rem' }}>
+          <section className="card">
             <h3 className="card-title" style={{ fontSize: '1.02rem' }}>話し合いを記録する</h3>
             <p className="card-sub">
               ご家族と話したことや次回へのメモを、この端末に記録します。
@@ -293,6 +360,44 @@ export default function FamilyTalk() {
                   placeholder="例）長女、配偶者など"
                   required
                 />
+              </div>
+
+              <div style={{ marginTop: '.85rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '.5rem', flexWrap: 'wrap' }}>
+                  <label htmlFor="talk-memo-input" className="card-sub" style={{ fontWeight: 700, marginTop: 0 }}>
+                    話した内容・メモ
+                  </label>
+                  {speechMemo.isSupported && (
+                    <button
+                      type="button"
+                      className={`btn btn-small mic-btn ${speechMemo.isListening ? 'listening' : ''}`}
+                      onClick={() => (speechMemo.isListening ? speechMemo.stop() : speechMemo.start())}
+                    >
+                      <Icon name="speaker" />
+                      {speechMemo.isListening ? '聞いています…' : '声でメモを入れる'}
+                    </button>
+                  )}
+                </div>
+                <div className="field" style={{ marginTop: '.35rem' }}>
+                  <textarea
+                    id="talk-memo-input"
+                    rows={3}
+                    value={memo}
+                    onChange={(e) => setMemo(e.target.value)}
+                    placeholder="話して感じたことや全体のメモをそのまま書けます"
+                  />
+                </div>
+                {hasApiKey && (
+                  <button
+                    type="button"
+                    className="btn btn-sub btn-block btn-small"
+                    style={{ marginTop: '.45rem' }}
+                    disabled={!memo.trim() || aiSummarizingLog}
+                    onClick={handleAiSummarizeNote}
+                  >
+                    {aiSummarizingLog ? '整理しています…' : 'AIに話した内容を下の欄へ整理してもらう'}
+                  </button>
+                )}
               </div>
 
               <div style={{ marginTop: '.85rem' }}>
@@ -325,20 +430,11 @@ export default function FamilyTalk() {
                 />
               </div>
 
-              <div style={{ marginTop: '.85rem' }}>
-                <label htmlFor="talk-memo-input" className="card-sub" style={{ fontWeight: 700, display: 'block' }}>
-                  メモ
-                </label>
-                <div className="field" style={{ marginTop: '.3rem' }}>
-                  <textarea
-                    id="talk-memo-input"
-                    rows={3}
-                    value={memo}
-                    onChange={(e) => setMemo(e.target.value)}
-                    placeholder="話して感じたことや補足など"
-                  />
-                </div>
-              </div>
+              {aiError && (
+                <p role="alert" className="note" style={{ color: 'var(--rose)', fontWeight: 700 }}>
+                  {aiError}
+                </p>
+              )}
 
               <button
                 type="submit"
@@ -355,7 +451,7 @@ export default function FamilyTalk() {
 
       {/* タブ3：過去の記録 */}
       {activeTab === 'logs' && (
-        <div role="tabpanel" aria-labelledby="family-tab-logs" style={{ marginTop: '1rem' }}>
+        <div role="tabpanel" aria-labelledby="family-tab-logs">
           {state.talkLogs.length === 0 ? (
             <div className="empty">
               まだ話し合いの記録はありません。<br />
