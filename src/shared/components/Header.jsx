@@ -27,7 +27,7 @@ export function Header({ title, showBack }) {
   return (
     <header className="top">
       {shouldShowBack ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '.45rem', flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flex: 1, minWidth: 0 }}>
           <button
             type="button"
             className="backbtn"
@@ -61,10 +61,6 @@ export function Header({ title, showBack }) {
         >
           {textSizeLabel}
         </button>
-
-        <Link to="/settings" className="iconbtn" aria-label="基本設定を開く">
-          <Icon name="gear" />
-        </Link>
       </div>
     </header>
   )

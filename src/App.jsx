@@ -18,6 +18,7 @@ import More from './memberA/More'
 // ■ B担当の画面
 import ItemList from './memberB/ItemList'
 import ItemDetail from './memberB/ItemDetail'
+import ItemInfo from './memberB/ItemInfo'
 import Memories from './memberB/Memories'
 import FamilyTalk from './memberB/FamilyTalk'
 
@@ -38,21 +39,23 @@ export default function App() {
       case '/survey':
         return '生活状況アンケート'
       case '/survey/q':
-        return 'アンケート：質問'
+        return 'アンケート'
       case '/survey/result':
-        return '質問結果・準備の提案'
+        return 'アンケートの結果'
       case '/items':
         return '準備項目一覧'
       case '/items/detail':
         return '準備項目の詳細'
+      case '/items/info':
+        return 'くわしい案内・相談先'
       case '/wishes':
-        return 'やってみたいこと一覧'
+        return 'やってみたいこと'
       case '/settings':
-        return '基本設定・データ管理'
+        return '基本設定・管理'
       case '/memories':
         return '希望・思い出帳'
       case '/family':
-        return '家族との対話・相談練習'
+        return '家族との対話'
       case '/more':
         return 'その他の機能'
       default:
@@ -124,6 +127,7 @@ export default function App() {
             {/* ■ B担当の画面 */}
             <Route path="/items" element={<ItemList />} />
             <Route path="/items/detail" element={<ItemDetail />} />
+            <Route path="/items/info" element={<ItemInfo />} />
             <Route path="/memories" element={<Memories />} />
             <Route path="/family" element={<FamilyTalk />} />
 
@@ -133,11 +137,6 @@ export default function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>
-
-        <p className="foot">
-          終活みちしるべ｜Webアプリ版<br />
-          入力した内容はこの端末のブラウザ内だけに保存され、設定からいつでもすべて消去できます。
-        </p>
       </div>
 
       <BottomNav />

@@ -12,8 +12,8 @@ export const ITEMS = [
   {
     id: "note",
     topic: "family",
-    title: "終活ノート（エンディングノート）の作成",
-    desc: "家族へのメッセージや希望を、一冊にまとめます。",
+    title: "終活ノートの作成",
+    desc: "家族へのメッセージや希望を一冊にまとめます（エンディングノート）。",
     steps: [
       "ノートまたは印刷用紙を用意する",
       "健康状態・家族の情報を書く",
@@ -35,7 +35,7 @@ export const ITEMS = [
   {
     id: "medical",
     topic: "medical",
-    title: "医療・介護の希望を伝える",
+    title: "医療・介護の希望",
     desc: "治療や介護についての希望を、あらかじめ整理します。",
     steps: [
       "今の希望を書き出す",
@@ -58,7 +58,7 @@ export const ITEMS = [
   {
     id: "money",
     topic: "money",
-    title: "財産・口座の一覧をつくる",
+    title: "財産・口座の整理",
     desc: "通帳・カード・契約書類の所在を整理します。",
     steps: [
       "通帳・カードの一覧を書く",
@@ -128,7 +128,7 @@ export const ITEMS = [
   {
     id: "grave",
     topic: "grave",
-    title: "お墓・葬儀の希望を決める",
+    title: "お墓・葬儀の希望",
     desc: "家族と相談し、希望の形を整理します。",
     steps: [
       "今のお墓・契約を確認する",
@@ -150,7 +150,7 @@ export const ITEMS = [
   {
     id: "family",
     topic: "family",
-    title: "家族との話し合い・共有",
+    title: "家族との話し合い",
     desc: "準備の状況や希望を、無理のない範囲で家族と共有します。",
     steps: [
       "共有したい内容を決める",
@@ -171,7 +171,7 @@ export const ITEMS = [
   {
     id: "pet",
     topic: "pet",
-    title: "ペットの引き継ぎ・お世話の準備",
+    title: "ペットのお世話・引き継ぎ",
     desc: "万が一のときにペットを託す相手や、飼育費・お世話の希望を整理します。",
     steps: [
       "引き継いでくれる人（新しい飼い主・後見人）の候補を探す",
@@ -195,7 +195,7 @@ export const ITEMS = [
   {
     id: "digital",
     topic: "digital",
-    title: "スマホ・ネット契約・引き落としの整理",
+    title: "スマホ・ネット契約の整理",
     desc: "毎月の引き落としやネット上の契約先、スマホの伝え方を整理します。",
     steps: [
       "毎月引き落とされている契約（携帯・動画・新聞など）を書き出す",

@@ -42,15 +42,8 @@ export default function Settings() {
 
   return (
     <div className="screen-anim">
-      <section className="card">
-        <h2 className="card-title">基本設定・データ管理</h2>
-        <p className="card-sub">
-          お名前や文字の大きさの変更、入力例（お試しデータ）の確認、保存データの消去を行います。
-        </p>
-      </section>
-
       {/* お名前設定 */}
-      <section className="card" style={{ marginTop: '1rem' }}>
+      <section className="card">
         <h3 className="card-title" style={{ fontSize: '1.04rem' }}>
           <label htmlFor="settings-name-input">お名前</label>
         </h3>

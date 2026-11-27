@@ -36,19 +36,11 @@ export default function SurveyTopics() {
 
   return (
     <div className="screen-anim">
-      {/* 導入バナー */}
-      <div className="notice notice-teal" style={{ padding: '.9rem 1rem' }}>
-        <div className="n-ic" style={{ width: '2.4rem', height: '2.4rem' }}>
-          <Icon name="post" style={{ width: '1.3rem', height: '1.3rem' }} />
-        </div>
-        <div className="n-body">
-          <h2 className="n-title" style={{ fontSize: '1.15rem', fontWeight: 800 }}>
-            生活状況アンケート
-          </h2>
-          <p className="n-sub" style={{ fontSize: '.9rem', marginTop: '.25rem', lineHeight: 1.55 }}>
-            お答えに合わせて質問が変わり、いま必要な準備がわかります（{QUIZ_FLOW_RANGE.min}〜{QUIZ_FLOW_RANGE.max}問・約3〜4分）。
-          </p>
-        </div>
+      {/* シンプルな導入 */}
+      <div className="plain-head">
+        <p className="plain-lead" style={{ marginTop: 0 }}>
+          お答えに合わせて質問が変わり、いま必要な準備がわかります（{QUIZ_FLOW_RANGE.min}〜{QUIZ_FLOW_RANGE.max}問・約3〜4分）。
+        </p>
       </div>
 
       {/* 回答状態に応じたアクションブロック */}

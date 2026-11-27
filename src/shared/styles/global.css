@@ -212,13 +212,70 @@ body {
   font-family: var(--font-head);
   font-weight: 800;
   color: var(--ink);
-  font-size: 1.15rem;
-  line-height: 1.4;
-  letter-spacing: .02em;
+  font-size: 1.06rem;
+  line-height: 1.35;
+  letter-spacing: .01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   min-width: 0;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.plain-head {
+  padding: .25rem .1rem .55rem;
+}
+
+.plain-title {
+  font-family: var(--font-head);
+  font-weight: 800;
+  font-size: 1.28rem;
+  color: var(--ink);
+  line-height: 1.45;
+}
+
+.plain-lead {
+  font-size: .96rem;
+  color: var(--body);
+  line-height: 1.75;
+  margin-top: .3rem;
+}
+
+.rowitem-compact {
+  padding: .85rem .95rem;
+  gap: .65rem;
+}
+
+.rowitem-compact .r-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .6rem;
+  flex-wrap: wrap;
+}
+
+.rowitem-compact .r-title {
+  font-size: 1.02rem;
+  line-height: 1.45;
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .6rem;
+  margin-top: 1rem;
+}
+
+.pager-info {
+  font-family: var(--font-head);
+  font-weight: 800;
+  font-size: .92rem;
+  color: var(--muted);
+  white-space: nowrap;
 }
 
 .brandrow {
